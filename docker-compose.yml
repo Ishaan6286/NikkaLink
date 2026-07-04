@@ -1,0 +1,89 @@
+# =============================================================================
+# Docker Compose — URL Shortener Stack
+# =============================================================================
+# Services: FastAPI API, PostgreSQL 16, Redis 7
+# =============================================================================
+
+services:
+  # ── FastAPI Application ──────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urlshort-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://shortener:shortener@postgres:5432/shortener
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - urlshort-network
+    restart: unless-stopped
+
+  # ── PostgreSQL 16 ───────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: urlshort-postgres
+    environment:
+      POSTGRES_USER: shortener
+      POSTGRES_PASSWORD: shortener
+      POSTGRES_DB: shortener
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shortener -d shortener"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - urlshort-network
+    restart: unless-stopped
+
+  # ── Redis 7 ────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: urlshort-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - urlshort-network
+    restart: unless-stopped
+
+# ── Volumes ────────────────────────────────────────────────────────────────
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+# ── Networks ───────────────────────────────────────────────────────────────
+networks:
+  urlshort-network:
+    driver: bridge

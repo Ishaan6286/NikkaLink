@@ -1,0 +1,59 @@
+[project]
+name = "url-shortener"
+version = "1.0.0"
+description = "Production-ready URL Shortener API built with FastAPI"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "URL Shortener Team" }]
+
+dependencies = [
+    "fastapi>=0.115.0,<1.0.0",
+    "uvicorn[standard]>=0.32.0,<1.0.0",
+    "sqlalchemy[asyncio]>=2.0.36,<3.0.0",
+    "asyncpg>=0.30.0,<1.0.0",
+    "alembic>=1.14.0,<2.0.0",
+    "redis>=5.2.0,<6.0.0",
+    "pydantic>=2.10.0,<3.0.0",
+    "pydantic-settings>=2.6.0,<3.0.0",
+    "pyjwt>=2.10.0,<3.0.0",
+    "bcrypt>=4.2.0,<5.0.0",
+    "python-multipart>=0.0.18",
+    "httpx>=0.28.0,<1.0.0",
+    "qrcode[pil]>=8.0,<9.0",
+    "user-agents>=2.2.0,<3.0.0",
+    "structlog>=24.4.0,<25.0.0",
+    "email-validator>=2.2.0,<3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0,<9.0.0",
+    "pytest-asyncio>=0.24.0,<1.0.0",
+    "pytest-cov>=6.0.0,<7.0.0",
+    "httpx>=0.28.0,<1.0.0",
+    "fakeredis>=2.26.0,<3.0.0",
+    "aiosqlite>=0.20.0,<1.0.0",
+    "ruff>=0.8.0,<1.0.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM", "TCH"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
