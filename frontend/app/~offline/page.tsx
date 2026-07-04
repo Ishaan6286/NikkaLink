@@ -1,10 +1,8 @@
+"use client";
+
 import { WifiOff } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-
-export const metadata = {
-  title: "Offline | NikkaLink",
-};
 
 export default function Offline() {
   return (
@@ -14,11 +12,10 @@ export default function Offline() {
       </div>
       <h1 className="text-3xl font-bold tracking-tight mb-3">You are offline</h1>
       <p className="text-muted-foreground max-w-sm mb-8">
-        It looks like you don't have an active internet connection. Please check your network settings and try again.
+        It looks like you don&apos;t have an active internet connection. Please check your network
+        settings and try again.
       </p>
-      <Button onClick={() => window.location.reload()}>
-        Try Again
-      </Button>
+      <Button onClick={() => window.location.reload()}>Try Again</Button>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { InstallPrompt } from "@/components/pwa/install-prompt";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nikkalink.vercel.app"),
   title: {
     default: "NikkaLink | Smart URL Management Platform",
     template: "%s | NikkaLink",
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "NikkaLink | Smart URL Management Platform",
     description: "Short Links. Smarter Connections. A premium URL management platform.",
-    url: "https://nikkalink.com",
+    url: "https://nikkalink.vercel.app",
     siteName: "NikkaLink",
     images: [
       {

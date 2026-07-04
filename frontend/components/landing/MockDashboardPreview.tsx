@@ -36,7 +36,7 @@ export function MockDashboardPreview() {
           <div className="w-3 h-3 rounded-full bg-red-500/80" />
           <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
           <div className="w-3 h-3 rounded-full bg-green-500/80" />
-          <span className="text-[11px] text-muted-foreground ml-3 font-mono">dashboard.nikkalink.com</span>
+          <span className="text-[11px] text-muted-foreground ml-3 font-mono">nikkalink.vercel.app/dashboard</span>
         </div>
         <div className="h-6 w-32 bg-background/50 rounded-full border border-border/30 flex items-center px-2 justify-center">
           <span className="text-[10px] text-muted-foreground font-medium">Workspace Active</span>

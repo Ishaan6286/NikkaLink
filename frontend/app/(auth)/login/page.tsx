@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
@@ -40,7 +40,9 @@ const features = [
   { icon: ShieldCheck, text: "Secure & private" },
 ];
 
-export default function LoginPage() {
+// ── Inner component that uses useSearchParams() ───────────────────────────────
+// Must be wrapped in <Suspense> at the page level for static generation.
+function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState("Signing in…");
   const searchParams = useSearchParams();
@@ -184,5 +186,14 @@ export default function LoginPage() {
         </div>
       </div>
     </motion.div>
+  );
+}
+
+// ── Page export: wraps LoginContent in Suspense ───────────────────────────────
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="w-full" />}>
+      <LoginContent />
+    </Suspense>
   );
 }
