@@ -310,9 +310,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="mx-auto max-w-3xl"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-4 py-1.5 text-xs font-semibold text-primary mb-8">
-              <Zap className="h-3.5 w-3.5" /> 100% Free to Get Started
-            </div>
+
 
             <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl leading-[1.1] mb-6">
               Shorten Links.<br />
