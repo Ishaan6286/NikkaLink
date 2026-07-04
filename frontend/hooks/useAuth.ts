@@ -1,66 +1,54 @@
-// ─── Auth React Query hooks ───────────────────────────────────────────────────
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+// ─── Auth hooks using NextAuth v5 ─────────────────────────────────────────────
+import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { authService } from "@/services/authService";
-
-export const AUTH_KEY = ["auth", "me"] as const;
 
 export function useMe() {
-  return useQuery({
-    queryKey: AUTH_KEY,
-    queryFn: authService.me,
-    enabled: authService.isLoggedIn(),
-    retry: false,
-  });
+  const { data: session, status } = useSession();
+  return {
+    data: session?.user ?? null,
+    isLoading: status === "loading",
+    isAuthenticated: status === "authenticated",
+  };
 }
 
-export function useLogin() {
-  const router = useRouter();
-  const qc = useQueryClient();
-
-  return useMutation({
-    mutationFn: authService.login,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: AUTH_KEY });
-      toast.success("Welcome back!");
-      router.push("/dashboard");
-    },
-    onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Invalid email or password.";
-      toast.error(msg);
-    },
-  });
-}
-
-export function useRegister() {
+export function useGoogleSignIn() {
   const router = useRouter();
 
-  return useMutation({
-    mutationFn: authService.register,
-    onSuccess: () => {
-      toast.success("Account created! Please log in.");
-      router.push("/login");
-    },
-    onError: (err: unknown) => {
-      const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Registration failed.";
-      toast.error(msg);
-    },
-  });
+  const handleSignIn = async (callbackUrl = "/dashboard") => {
+    try {
+      const result = await signIn("google", {
+        callbackUrl,
+        redirect: false,
+      });
+      if (result?.error) {
+        toast.error("Sign-in failed. Please try again.");
+      } else if (result?.url) {
+        router.push(result.url);
+      }
+    } catch {
+      toast.error("An unexpected error occurred.");
+    }
+  };
+
+  return handleSignIn;
 }
 
 export function useLogout() {
   const router = useRouter();
-  const qc = useQueryClient();
 
-  return () => {
-    authService.logout();
-    qc.clear();
+  return async () => {
+    await signOut({ redirect: false });
     router.push("/login");
-    toast.success("Logged out.");
+    toast.success("Logged out successfully.");
+  };
+}
+
+// Legacy compatibility — kept so old imports don't break during migration
+export function useLogin() {
+  const signInWithGoogle = useGoogleSignIn();
+  return {
+    mutate: () => signInWithGoogle(),
+    isPending: false,
   };
 }

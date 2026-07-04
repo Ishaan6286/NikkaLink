@@ -32,7 +32,7 @@ export default function DashboardPage() {
         >
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Good day, {user?.username ?? "there"} 👋
+              Good day, {user?.name?.split(" ")[0] ?? "there"} 👋
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
               Here&apos;s an overview of your links and their performance.

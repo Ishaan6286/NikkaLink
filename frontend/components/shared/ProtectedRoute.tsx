@@ -1,25 +1,32 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { authService } from "@/services/authService";
+import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { status } = useSession();
   const router = useRouter();
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    if (!authService.isLoggedIn()) {
+    if (status === "unauthenticated") {
       router.replace("/login");
     }
-  }, [router]);
+  }, [status, router]);
 
-  if (!mounted) {
-    return null;
+  if (status === "loading") {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading your session…</p>
+        </div>
+      </div>
+    );
   }
 
-  if (!authService.isLoggedIn()) {
+  if (status === "unauthenticated") {
     return null;
   }
 

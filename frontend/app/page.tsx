@@ -24,6 +24,9 @@ import {
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { LiveShortener } from "@/components/landing/LiveShortener";
+import { useSession } from "next-auth/react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader2 } from "lucide-react";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -266,6 +269,8 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
 // ─── Main Landing Page ─────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const { data: session, status } = useSession();
+
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
 
@@ -282,15 +287,38 @@ export default function LandingPage() {
           </nav>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/login" className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
-              Log in
-            </Link>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
-            >
-              Shorten Link <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
+            {status === "loading" ? (
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-4" />
+            ) : status === "authenticated" ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/profile">
+                  <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:opacity-80 transition-opacity">
+                    <AvatarImage src={session?.user?.image ?? undefined} alt={session?.user?.name ?? "User"} />
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
+                      {(session?.user?.name ?? session?.user?.email ?? "U").slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
+                  Log in
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
+                >
+                  Get Started <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -376,7 +404,7 @@ export default function LandingPage() {
             </div>
             <div className="text-center mt-10">
               <Link
-                href="/register"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/5 px-6 py-2.5 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
               >
                 Explore All Features <ArrowRight className="h-4 w-4" />
@@ -465,7 +493,7 @@ export default function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/register"
+                href="/login"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/30 hover:bg-primary/90 transition-all"
               >
                 Start Shortening Now <span className="text-primary-foreground/70 text-xs">(It&apos;s Free)</span>
@@ -514,9 +542,9 @@ export default function LandingPage() {
               <p className="text-sm font-semibold mb-4">Product</p>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
-                <li><Link href="/register" className="hover:text-primary transition-colors">Pricing</Link></li>
+                <li><Link href="/login" className="hover:text-primary transition-colors">Pricing</Link></li>
                 <li><a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">API</a></li>
-                <li><Link href="/register" className="hover:text-primary transition-colors">Roadmap</Link></li>
+                <li><Link href="/login" className="hover:text-primary transition-colors">Roadmap</Link></li>
               </ul>
             </div>
             <div>

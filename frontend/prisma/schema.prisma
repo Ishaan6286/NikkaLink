@@ -1,0 +1,185 @@
+// =============================================================================
+// NikkaLink – Prisma Schema
+// Database: PostgreSQL (Neon)
+// =============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum DeviceType {
+  DESKTOP
+  MOBILE
+  TABLET
+  OTHER
+}
+
+enum QRFormat {
+  PNG
+  SVG
+}
+
+// Future-proof: user plan tiers
+enum PlanTier {
+  FREE
+  PRO
+  BUSINESS
+  ENTERPRISE
+}
+
+// ─── User ───────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  googleId      String?   @unique @map("google_id")
+  provider      String?   @default("google")
+  lastLogin     DateTime? @map("last_login")
+  plan          PlanTier  @default(FREE)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // App relations
+  links Link[]
+
+  @@index([email])
+  @@index([googleId])
+  @@map("users")
+}
+
+// ─── NextAuth Account ────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// ─── NextAuth Session ────────────────────────────────────────────────────────
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ─── NextAuth VerificationToken ──────────────────────────────────────────────
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─── Link ───────────────────────────────────────────────────────────────────
+
+model Link {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  originalUrl    String    @map("original_url")
+  shortCode      String    @unique @map("short_code")
+  customAlias    String?   @unique @map("custom_alias")
+  title          String?
+  description    String?
+  favicon        String?
+  qrCodeUrl      String?   @map("qr_code_url")
+  qrCodePublicId String?   @map("qr_code_public_id")
+  clickCount     Int       @default(0) @map("click_count")
+  isActive       Boolean   @default(true) @map("is_active")
+  password       String?   // Future: password-protected links
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clicks  ClickAnalytics[]
+  qrCodes QRCode[]
+
+  @@index([shortCode])
+  @@index([clickCount])
+  @@index([createdAt])
+  @@index([userId])
+  @@map("links")
+}
+
+// ─── Click Analytics ────────────────────────────────────────────────────────
+
+model ClickAnalytics {
+  id              String     @id @default(cuid())
+  linkId          String     @map("link_id")
+  timestamp       DateTime   @default(now())
+  country         String?
+  city            String?
+  browser         String?
+  operatingSystem String?    @map("operating_system")
+  deviceType      DeviceType @default(OTHER) @map("device_type")
+  referrer        String?
+  ipHash          String?    @map("ip_hash")
+  userAgent       String?    @map("user_agent")
+
+  // Relations
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@index([timestamp])
+  @@index([country])
+  @@map("click_analytics")
+}
+
+// ─── QR Code ────────────────────────────────────────────────────────────────
+
+model QRCode {
+  id        String   @id @default(cuid())
+  linkId    String   @map("link_id")
+  imageUrl  String   @map("image_url")
+  format    QRFormat @default(PNG)
+  size      Int      @default(300)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+  @@index([linkId])
+  @@map("qr_codes")
+}

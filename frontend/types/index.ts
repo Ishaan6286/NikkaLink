@@ -1,25 +1,32 @@
-// ─── Global TypeScript types for URL Shortener ───────────────────────────────
+// ─── Global TypeScript types for NikkaLink ───────────────────────────────────
 
 export interface User {
   id: string;
+  name: string | null;
   email: string;
-  username: string;
-  is_active: boolean;
-  is_superuser: boolean;
-  created_at: string;
+  image: string | null;
+  googleId: string | null;
+  provider: string | null;
+  lastLogin: string | null;
+  plan: "FREE" | "PRO" | "BUSINESS" | "ENTERPRISE";
+  emailVerified: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
+// NextAuth session user (subset returned by useSession)
+export interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
 }
 
 export interface URLItem {
   id: string;
   short_code: string;
   original_url: string;
-  owner_id: string;
+  user_id: string;
   is_active: boolean;
   total_clicks: number;
   tags: string[];
@@ -58,7 +65,7 @@ export interface TimeSeriesPoint {
 
 export interface ClickRecord {
   id: string;
-  url_id: string;
+  link_id: string;
   ip_hash: string;
   browser: string | null;
   device: string | null;
