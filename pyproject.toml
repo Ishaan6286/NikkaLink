@@ -1,6 +1,6 @@
 [project]
 name = "url-shortener"
-version = "1.0.0"
+version = "1.0.1"
 description = "Production-ready URL Shortener API built with FastAPI"
 requires-python = ">=3.12"
 license = { text = "MIT" }
