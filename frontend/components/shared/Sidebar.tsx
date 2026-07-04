@@ -10,18 +10,18 @@ import {
   LayoutDashboard,
   Link2,
   Menu,
-  User,
   X,
   QrCode,
   Key,
   Settings,
   Home,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe } from "@/hooks/useAuth";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
 
 const navItems = [
@@ -75,6 +75,9 @@ export function Sidebar() {
   const logout = useLogout();
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const displayName = user?.name ?? user?.email?.split("@")[0] ?? "User";
+  const initials = displayName.slice(0, 2).toUpperCase();
+
   const SidebarContent = () => (
     <div className="flex h-full flex-col gap-4">
       {/* Logo */}
@@ -108,13 +111,14 @@ export function Sidebar() {
       {user && (
         <div className="border-t border-border/50 px-2 pb-2 pt-4">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2">
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+              <AvatarImage src={user.image ?? undefined} alt={displayName} />
               <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                {user.username.slice(0, 2).toUpperCase()}
+                {initials}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">{user.username}</p>
+              <p className="truncate text-sm font-medium">{displayName}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {user.email}
               </p>
@@ -126,8 +130,9 @@ export function Sidebar() {
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="text-muted-foreground hover:text-foreground text-xs"
+              className="text-muted-foreground hover:text-destructive text-xs gap-1.5"
             >
+              <LogOut className="h-3.5 w-3.5" />
               Log out
             </Button>
           </div>

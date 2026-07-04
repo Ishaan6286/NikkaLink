@@ -16,8 +16,8 @@ export default function Offline() {
       <p className="text-muted-foreground max-w-sm mb-8">
         It looks like you don't have an active internet connection. Please check your network settings and try again.
       </p>
-      <Button asChild>
-        <Link href="/">Try Again</Link>
+      <Button onClick={() => window.location.reload()}>
+        Try Again
       </Button>
     </div>
   );

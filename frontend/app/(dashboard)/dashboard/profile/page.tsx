@@ -67,35 +67,21 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border/50">
                   <Avatar className="h-14 w-14">
                     <AvatarFallback className="bg-primary/20 text-primary text-lg font-bold">
-                      {user.username.slice(0, 2).toUpperCase()}
+                      {(user.name ?? user.email ?? "U").slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-semibold text-lg">{user.username}</p>
+                    <p className="font-semibold text-lg">{user.name ?? "User"}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <Badge variant={user.is_active ? "default" : "secondary"} className="text-xs">
-                        {user.is_active ? "Active" : "Inactive"}
+                      <Badge variant="default" className="text-xs">
+                        Active
                       </Badge>
-                      {user.is_superuser && (
-                        <Badge variant="outline" className="text-xs gap-1">
-                          <Shield className="h-3 w-3" /> Admin
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </div>
 
-                <ProfileField label="Username" value={user.username} icon={User} />
-                <ProfileField label="Email address" value={user.email} icon={Mail} />
-                <ProfileField
-                  label="Member since"
-                  value={new Date(user.created_at).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                  icon={Shield}
-                />
+                <ProfileField label="Name" value={user.name ?? "Not provided"} icon={User} />
+                <ProfileField label="Email address" value={user.email ?? ""} icon={Mail} />
               </>
             ) : null}
           </CardContent>

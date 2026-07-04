@@ -11,16 +11,21 @@ const withPWA = withPWAInit({
   },
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   turbopack: {},
-  // Allow CORS images from the backend for QR codes
+  // Allow CORS images from the backend for QR codes and Google Avatar images
   images: {
     remotePatterns: [
       {
         protocol: "http",
         hostname: "localhost",
         port: "8000",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
       },
     ],
   },

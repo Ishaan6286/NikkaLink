@@ -36,22 +36,79 @@ enum PlanTier {
 // ─── User ───────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(cuid())
-  googleId  String   @unique @map("google_id")
-  name      String
-  email     String   @unique
-  image     String?
-  plan      PlanTier @default(FREE)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime? @map("email_verified")
+  image         String?
+  googleId      String?   @unique @map("google_id")
+  provider      String?   @default("google")
+  lastLogin     DateTime? @map("last_login")
+  plan          PlanTier  @default(FREE)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
-  // Relations
-  links  Link[]
-  // Future: apiKeys ApiKey[]
+  // NextAuth relations
+  accounts Account[]
+  sessions Session[]
+
+  // App relations
+  links Link[]
 
   @@index([email])
   @@index([googleId])
   @@map("users")
+}
+
+// ─── NextAuth Account ────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+// ─── NextAuth Session ────────────────────────────────────────────────────────
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ─── NextAuth VerificationToken ──────────────────────────────────────────────
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
 }
 
 // ─── Link ───────────────────────────────────────────────────────────────────
@@ -75,9 +132,9 @@ model Link {
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clicks    ClickAnalytics[]
-  qrCodes   QRCode[]
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clicks  ClickAnalytics[]
+  qrCodes QRCode[]
 
   @@index([shortCode])
   @@index([clickCount])
