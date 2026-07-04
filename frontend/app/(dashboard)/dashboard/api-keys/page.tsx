@@ -176,7 +176,7 @@ console.log(data.short_url);`
                 <RefreshCw className="h-3 w-3" />
                 Refresh
               </Button>
-              <Button size="sm" variant="ghost" className="gap-2 h-8 text-xs ml-auto" render={<a href={`${API_URL}/docs`} target="_blank" rel="noreferrer" />}>
+              <Button size="sm" variant="ghost" className="gap-2 h-8 text-xs ml-auto" render={<a href={`${API_URL}/docs`} target="_blank" rel="noreferrer" />} nativeButton={false}>
                 <ExternalLink className="h-3 w-3" />
                 API Docs
               </Button>
@@ -223,7 +223,7 @@ console.log(data.short_url);`
             { method: "GET", path: "/api/v1/urls/{code}/qr", desc: "Get QR code image" },
             { method: "GET", path: "/api/v1/analytics/{code}", desc: "Get analytics for a link" },
           ].map((ep) => (
-            <div key={ep.path} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
+            <div key={`${ep.method}-${ep.path}`} className="flex items-center gap-4 px-4 py-3 hover:bg-muted/30 transition-colors">
               <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded shrink-0 ${
                 ep.method === "GET" ? "bg-blue-500/15 text-blue-400" :
                 ep.method === "POST" ? "bg-green-500/15 text-green-400" :

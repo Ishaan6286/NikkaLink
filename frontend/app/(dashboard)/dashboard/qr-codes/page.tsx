@@ -82,6 +82,7 @@ function QRCard({ url }: { url: { short_code: string; original_url: string; is_a
           variant="outline"
           className="h-8 w-8 p-0"
           render={<a href={shortUrl} target="_blank" rel="noreferrer" title="Open link" />}
+          nativeButton={false}
         >
           <ExternalLink className="h-3 w-3" />
         </Button>
