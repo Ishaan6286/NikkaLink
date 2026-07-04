@@ -144,7 +144,7 @@ function ShortenTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-10"
+                className="gap-2 h-11"
                 onClick={() => window.open(result.short_url, "_blank")}
               >
                 <ExternalLink className="h-4 w-4" /> Visit URL
@@ -152,7 +152,7 @@ function ShortenTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-10"
+                className="gap-2 h-11"
                 onClick={() => window.open(`${API_URL}/api/v1/urls/${result.short_code}/qr`, "_blank")}
               >
                 <QrCode className="h-4 w-4" /> QR Code
@@ -160,7 +160,7 @@ function ShortenTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-10"
+                className="gap-2 h-11"
                 onClick={handleShare}
               >
                 <Share2 className="h-4 w-4" /> Share
@@ -168,7 +168,7 @@ function ShortenTab() {
               <Button
                 variant="outline"
                 size="sm"
-                className="gap-2 h-10"
+                className="gap-2 h-11"
                 onClick={handleCopy}
               >
                 {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
@@ -299,14 +299,14 @@ function QRTab() {
             <div className="grid grid-cols-2 gap-2">
               <Button
                 onClick={handleDownload}
-                className="h-10 gap-2 text-sm"
+                className="h-11 gap-2 text-sm"
               >
                 <Download className="h-4 w-4" /> Download PNG
               </Button>
               <Button
                 variant="outline"
                 onClick={handleReset}
-                className="h-10 gap-2 text-sm"
+                className="h-11 gap-2 text-sm"
               >
                 <RefreshCw className="h-4 w-4" /> Generate New
               </Button>

@@ -84,7 +84,7 @@ export function URLTable({ urls, isLoading }: URLTableProps) {
 
   return (
     <>
-      <div className="rounded-lg border border-border/50 overflow-hidden">
+      <div className="rounded-lg border border-border/50 overflow-hidden hidden sm:block">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30 hover:bg-muted/30">
@@ -209,6 +209,80 @@ export function URLTable({ urls, isLoading }: URLTableProps) {
             <p className="mt-1 text-xs text-muted-foreground">
               Create your first NikkaLink to get started.
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile Card Layout */}
+      <div className="sm:hidden flex flex-col gap-4">
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="p-4 border border-border/50 rounded-xl space-y-3">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-3 w-full" />
+                <div className="flex justify-between pt-2">
+                  <Skeleton className="h-3 w-1/4" />
+                  <Skeleton className="h-3 w-1/4" />
+                </div>
+              </div>
+            ))
+          : urls.map((url) => {
+              const shortURL = urlService.getShortURL(url.short_code);
+              return (
+                <div key={url.id} className="p-4 border border-border/50 rounded-xl bg-card/50 flex flex-col gap-3">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <span className="text-base font-semibold text-primary truncate">
+                        {url.short_code}
+                      </span>
+                      <CopyButton text={shortURL} />
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger render={
+                        <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                          <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                      } />
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem onClick={() => window.open(shortURL, "_blank")}>
+                          <ExternalLink className="mr-2 h-4 w-4" /> Open link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/analytics?code=${url.short_code}`)}>
+                          <BarChart2 className="mr-2 h-4 w-4" /> View analytics
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setQrCode(url.short_code)}>
+                          <QrCode className="mr-2 h-4 w-4" /> QR Code
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => handleDelete(url.short_code)}>
+                          <Trash2 className="mr-2 h-4 w-4" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                  
+                  <div className="text-xs text-muted-foreground font-mono truncate">
+                    {url.original_url}
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-2 border-t border-border/40 mt-1">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Clicks</span>
+                      <span className="text-sm font-medium">{url.total_clicks.toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col text-right">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Created</span>
+                      <span className="text-sm font-medium">{formatDate(url.created_at)}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+        }
+        {!isLoading && urls.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-10 text-center border border-border/50 rounded-xl bg-card/30">
+            <ExternalLink className="h-6 w-6 text-muted-foreground mb-2" />
+            <p className="text-sm font-medium text-muted-foreground">No links found</p>
           </div>
         )}
       </div>
