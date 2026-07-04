@@ -55,5 +55,5 @@ ignore = ["E501"]
 known-first-party = ["app"]
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
