@@ -56,9 +56,7 @@ function RowSkeleton() {
   );
 }
 
-function truncate(url: string, n = 42) {
-  return url.length > n ? url.slice(0, n) + "…" : url;
-}
+
 
 function formatDate(iso: string | null) {
   if (!iso) return "—";
@@ -108,11 +106,11 @@ export function URLTable({ urls, isLoading }: URLTableProps) {
                   const shortURL = urlService.getShortURL(url.short_code);
                   return (
                     <TableRow key={url.id} className="group">
-                      <TableCell className="font-mono text-xs text-muted-foreground max-w-[240px]">
+                      <TableCell className="font-mono text-xs text-muted-foreground max-w-[120px] sm:max-w-[200px] md:max-w-[240px] truncate">
                         <Tooltip>
-                          <TooltipTrigger>
+                          <TooltipTrigger className="w-full text-left truncate">
                             <span className="cursor-default">
-                              {truncate(url.original_url)}
+                              {url.original_url}
                             </span>
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs break-all">

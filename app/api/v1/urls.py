@@ -33,6 +33,23 @@ from app.utils.qr import generate_qr_code
 router = APIRouter(prefix="/urls", tags=["URLs"])
 
 
+@router.get(
+    "/qr/generate",
+    summary="Generate QR code from any URL (public)",
+    description="Generate a QR code PNG for any URL without authentication or shortening.",
+    responses={200: {"content": {"image/png": {}}}},
+)
+async def generate_qr_from_url(
+    url: str = Query(..., description="The URL to encode into a QR code"),
+) -> Response:
+    qr_bytes = generate_qr_code(url)
+    return Response(
+        content=qr_bytes,
+        media_type="image/png",
+        headers={"Content-Disposition": 'inline; filename="qr.png"'},
+    )
+
+
 @router.post(
     "",
     response_model=URLResponse,

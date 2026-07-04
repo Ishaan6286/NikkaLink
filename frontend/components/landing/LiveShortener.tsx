@@ -5,45 +5,54 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, Sparkles, Copy, QrCode, Share2, BarChart3, Check } from "lucide-react";
+import {
+  Loader2,
+  Link2,
+  QrCode,
+  Copy,
+  ExternalLink,
+  Share2,
+  Check,
+  Download,
+  RefreshCw,
+  ArrowRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
 import { toast } from "sonner";
-import { QRModal } from "@/components/dashboard/QRModal";
-import Link from "next/link";
+import Image from "next/image";
 
-const schema = z.object({
-  original_url: z.string().url("Please enter a valid URL"),
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+const urlSchema = z.object({
+  url: z.string().url("Please enter a valid URL (include https://)"),
 });
 
-type FormData = z.infer<typeof schema>;
+type UrlForm = z.infer<typeof urlSchema>;
 
-export function LiveShortener() {
+// ─── Shorten Tab ───────────────────────────────────────────────────────────────
+
+function ShortenTab() {
   const [result, setResult] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [qrOpen, setQrOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<FormData>({ resolver: zodResolver(schema) });
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<UrlForm>({
+    resolver: zodResolver(urlSchema),
+  });
 
-  const onSubmit = async (data: FormData) => {
+  const originalUrl = watch("url");
+
+  const onSubmit = async (data: UrlForm) => {
     setIsLoading(true);
     setResult(null);
     try {
-      const res = await api.post("/api/v1/urls", {
-        original_url: data.original_url,
-      });
+      const res = await api.post("/api/v1/urls", { original_url: data.url });
       setResult(res.data);
-      reset();
-      toast.success("Short link created successfully!");
-    } catch (error: any) {
-      toast.error(error.response?.data?.detail || "Failed to shorten URL");
+      toast.success("Short link created!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.detail || "Failed to shorten URL");
     } finally {
       setIsLoading(false);
     }
@@ -52,118 +61,327 @@ export function LiveShortener() {
   const handleCopy = async () => {
     if (!result) return;
     await navigator.clipboard.writeText(result.short_url);
-    setIsCopied(true);
-    toast.success("Copied to clipboard!");
-    setTimeout(() => setIsCopied(false), 2000);
+    setCopied(true);
+    toast.success("Copied!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleShare = async () => {
     if (!result) return;
     if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "NikkaLink",
-          text: "Check out this link!",
-          url: result.short_url,
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    } else {
-      handleCopy();
-    }
+      try { await navigator.share({ title: "NikkaLink", url: result.short_url }); }
+      catch {}
+    } else { handleCopy(); }
+  };
+
+  const handleReset = () => {
+    setResult(null);
+    reset();
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-12 bg-card/60 backdrop-blur-xl border border-border/50 rounded-2xl p-6 shadow-2xl relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-tr from-primary/5 via-transparent to-primary/5 pointer-events-none" />
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="relative z-10 w-full mt-4">
-        <div className="relative flex items-center shadow-lg rounded-2xl overflow-hidden ring-1 ring-border focus-within:ring-2 focus-within:ring-primary/50 transition-all bg-background/80">
-          <Input
-            placeholder="Paste your long link here..."
-            className="h-16 pl-6 pr-36 bg-transparent text-lg border-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-            {...register("original_url")}
-          />
-          <Button 
-            type="submit" 
-            disabled={isLoading} 
-            className="absolute right-1.5 h-13 px-6 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base transition-all"
+    <div className="p-6">
+      {!result ? (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+              <ArrowRight className="h-4 w-4 text-primary" /> Long URL
+            </label>
+            <Input
+              placeholder="https://www.example.com/very/long/link?with=params"
+              className="h-11 bg-background"
+              {...register("url")}
+            />
+            {errors.url && (
+              <p className="text-xs text-destructive mt-1">{errors.url.message}</p>
+            )}
+          </div>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full h-11 text-sm font-semibold"
           >
             {isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Shortening...</>
             ) : (
-              <>
-                <Sparkles className="mr-2 h-5 w-5" />
-                Shorten
-              </>
+              <><Link2 className="mr-2 h-4 w-4" /> Shorten Link</>
+            )}
+          </Button>
+        </form>
+      ) : (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key="result"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
+          >
+            {/* Original URL */}
+            <div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-1.5">
+                <ArrowRight className="h-3.5 w-3.5" /> Long URL
+              </label>
+              <div className="h-10 rounded-lg border border-border bg-muted/30 px-3 flex items-center">
+                <span className="text-sm text-muted-foreground truncate">{result.original_url}</span>
+              </div>
+            </div>
+
+            {/* Short URL */}
+            <div>
+              <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground mb-1.5">
+                <Link2 className="h-3.5 w-3.5" /> NikkaLink Short Link
+              </label>
+              <div className="h-11 rounded-lg border-2 border-primary bg-primary/5 px-3 flex items-center justify-between gap-2">
+                <span className="text-sm font-semibold text-primary truncate">{result.short_url}</span>
+                <button onClick={handleCopy} className="shrink-0 text-primary hover:text-primary/70 transition-colors">
+                  {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-10"
+                onClick={() => window.open(result.short_url, "_blank")}
+              >
+                <ExternalLink className="h-4 w-4" /> Visit URL
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-10"
+                onClick={() => window.open(`${API_URL}/api/v1/urls/${result.short_code}/qr`, "_blank")}
+              >
+                <QrCode className="h-4 w-4" /> QR Code
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-10"
+                onClick={handleShare}
+              >
+                <Share2 className="h-4 w-4" /> Share
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 h-10"
+                onClick={handleCopy}
+              >
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                Copy
+              </Button>
+            </div>
+
+            {/* Shorten another */}
+            <Button
+              onClick={handleReset}
+              className="w-full h-11 text-sm font-semibold gap-2"
+            >
+              <RefreshCw className="h-4 w-4" /> Shorten Another Link
+            </Button>
+          </motion.div>
+        </AnimatePresence>
+      )}
+    </div>
+  );
+}
+
+// ─── QR Code Tab ───────────────────────────────────────────────────────────────
+
+function QRTab() {
+  const [qrUrl, setQrUrl] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [inputUrl, setInputUrl] = useState("");
+  const [error, setError] = useState("");
+
+  const handleGenerate = async () => {
+    setError("");
+    try { new URL(inputUrl); } catch {
+      setError("Please enter a valid URL (include https://)");
+      return;
+    }
+    setIsLoading(true);
+    setQrUrl(null);
+    try {
+      // Use the public QR endpoint — returns a PNG image blob
+      const res = await fetch(
+        `${API_URL}/api/v1/urls/qr/generate?url=${encodeURIComponent(inputUrl)}`
+      );
+      if (!res.ok) throw new Error("QR generation failed");
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      setQrUrl(objectUrl);
+      toast.success("QR Code generated!");
+    } catch {
+      toast.error("Failed to generate QR code");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!qrUrl) return;
+    const a = document.createElement("a");
+    a.href = qrUrl;
+    a.download = "nikkalink-qr.png";
+    a.click();
+    toast.success("QR Code downloaded!");
+  };
+
+  const handleReset = () => {
+    setQrUrl(null);
+    setInputUrl("");
+    setError("");
+  };
+
+  return (
+    <div className="p-6">
+      {!qrUrl ? (
+        <div className="space-y-4">
+          <div>
+            <label className="flex items-center gap-2 text-sm font-semibold mb-2">
+              <ArrowRight className="h-4 w-4 text-primary" /> Enter URL
+            </label>
+            <Input
+              placeholder="https://www.example.com/link-you-want-as-qr"
+              className="h-11 bg-background"
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+            />
+            {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+          </div>
+          <Button
+            onClick={handleGenerate}
+            disabled={isLoading || !inputUrl}
+            className="w-full h-11 text-sm font-semibold"
+          >
+            {isLoading ? (
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+            ) : (
+              <><QrCode className="mr-2 h-4 w-4" /> Generate QR Code</>
             )}
           </Button>
         </div>
-        {errors.original_url && (
-          <motion.p 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute -bottom-6 left-4 text-sm font-medium text-destructive"
-          >
-            {errors.original_url.message}
-          </motion.p>
-        )}
-      </form>
-
-      <AnimatePresence>
-        {result && (
+      ) : (
+        <AnimatePresence mode="wait">
           <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: "auto", marginTop: 24 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            className="relative z-10 overflow-hidden"
+            key="qr-result"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-4"
           >
-            <div className="bg-background/80 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex-1 truncate">
-                <p className="text-sm text-muted-foreground mb-1">Your link is ready!</p>
-                <a 
-                  href={result.short_url} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="text-lg font-semibold text-primary hover:underline truncate block"
-                >
-                  {result.short_url}
-                </a>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button variant="secondary" size="sm" onClick={handleCopy} className="gap-2">
-                  {isCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                  Copy
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setQrOpen(true)} className="gap-2">
-                  <QrCode className="h-4 w-4" />
-                  QR Code
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleShare} className="gap-2">
-                  <Share2 className="h-4 w-4" />
-                  Share
-                </Button>
-                <Link
-                  href={`/analytics/${result.short_code}`}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-gradient-to-r from-primary to-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow transition-opacity hover:opacity-90"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Stats
-                </Link>
+            {/* URL label */}
+            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+              <p className="text-xs text-muted-foreground mb-0.5">URL</p>
+              <p className="text-sm font-medium truncate">{inputUrl}</p>
+            </div>
+
+            {/* QR Image */}
+            <div className="flex justify-center">
+              <div className="rounded-2xl border-2 border-primary/20 bg-white p-3 shadow-lg">
+                <Image
+                  src={qrUrl}
+                  alt="QR Code"
+                  width={200}
+                  height={200}
+                  className="rounded-lg"
+                  unoptimized
+                />
               </div>
             </div>
-            
-            {qrOpen && (
-              <QRModal
-                open={qrOpen}
-                onOpenChange={setQrOpen}
-                shortCode={result.short_code}
-              />
-            )}
+
+            {/* Action buttons */}
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                onClick={handleDownload}
+                className="h-10 gap-2 text-sm"
+              >
+                <Download className="h-4 w-4" /> Download PNG
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleReset}
+                className="h-10 gap-2 text-sm"
+              >
+                <RefreshCw className="h-4 w-4" /> Generate New
+              </Button>
+            </div>
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      )}
+    </div>
+  );
+}
+
+// ─── Main exported component ───────────────────────────────────────────────────
+
+export function LiveShortener() {
+  const [tab, setTab] = useState<"shorten" | "qr">("shorten");
+
+  return (
+    <div className="w-full max-w-lg mx-auto mt-10">
+      <div className="rounded-2xl border border-border/60 bg-card/90 backdrop-blur-xl shadow-2xl overflow-hidden">
+        {/* Tab Header */}
+        <div className="grid grid-cols-2 border-b border-border/50">
+          <button
+            onClick={() => setTab("shorten")}
+            className={`flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-all ${
+              tab === "shorten"
+                ? "bg-card text-foreground border-b-2 border-primary"
+                : "bg-muted/30 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Link2 className="h-4 w-4" /> Shorten a Link
+          </button>
+          <button
+            onClick={() => setTab("qr")}
+            className={`flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-all ${
+              tab === "qr"
+                ? "bg-card text-foreground border-b-2 border-primary"
+                : "bg-muted/30 text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <QrCode className="h-4 w-4" /> Generate QR Code
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {tab === "shorten" ? (
+            <motion.div
+              key="shorten"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.15 }}
+            >
+              <ShortenTab />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="qr"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.15 }}
+            >
+              <QRTab />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Footer */}
+        <div className="border-t border-border/40 bg-muted/20 px-6 py-3 text-center">
+          <p className="text-xs text-muted-foreground">
+            No account required · Instant · Free forever
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
