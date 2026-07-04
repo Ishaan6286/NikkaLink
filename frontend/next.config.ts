@@ -1,4 +1,5 @@
 import withPWAInit from "@ducanh2912/next-pwa";
+import path from "node:path";
 
 const withPWA = withPWAInit({
   dest: "public",
@@ -14,7 +15,9 @@ const withPWA = withPWAInit({
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  turbopack: {},
+  turbopack: {
+    root: path.resolve(process.cwd()),
+  },
   // Allow CORS images from the backend for QR codes and Google Avatar images
   images: {
     remotePatterns: [
