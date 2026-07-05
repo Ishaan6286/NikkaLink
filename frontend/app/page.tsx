@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -27,6 +26,7 @@ import { LiveShortener } from "@/components/landing/LiveShortener";
 import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -278,7 +278,7 @@ export default function LandingPage() {
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="NikkaLink" width={192} height={48} className="h-11 w-auto object-contain" priority />
+            <BrandLogo iconClassName="h-10 w-10" wordmarkClassName="text-xl" />
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <a href="#features" className="hover:text-foreground transition-colors">Features</a>
@@ -533,7 +533,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
             <div className="md:col-span-1">
-              <Image src="/logo.png" alt="NikkaLink" width={132} height={34} className="h-9 w-auto opacity-90 object-contain mb-3" />
+              <BrandLogo href="/" iconClassName="h-8 w-8" wordmarkClassName="text-lg" />
               <p className="text-sm text-muted-foreground leading-relaxed">
                 Short Links. Smarter Connections.
               </p>

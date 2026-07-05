@@ -24,6 +24,14 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const PUBLIC_APP_URL =
+  process.env.NEXT_PUBLIC_APP_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "http://localhost:3000";
+
+function buildPublicShortUrl(shortCode: string) {
+  return `${PUBLIC_APP_URL.replace(/\/$/, "")}/${shortCode}`;
+}
 
 const urlSchema = z.object({
   url: z.string().url("Please enter a valid URL (include https://)"),
@@ -60,7 +68,7 @@ function ShortenTab() {
 
   const handleCopy = async () => {
     if (!result) return;
-    await navigator.clipboard.writeText(result.short_url);
+    await navigator.clipboard.writeText(buildPublicShortUrl(result.short_code));
     setCopied(true);
     toast.success("Copied!");
     setTimeout(() => setCopied(false), 2000);
@@ -68,10 +76,13 @@ function ShortenTab() {
 
   const handleShare = async () => {
     if (!result) return;
-    if (navigator.share) {
-      try { await navigator.share({ title: "NikkaLink", url: result.short_url }); }
-      catch {}
-    } else { handleCopy(); }
+    const publicShortUrl = buildPublicShortUrl(result.short_code);
+    const whatsappMessage = `NikkaLink: ${publicShortUrl}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(whatsappMessage)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
   };
 
   const handleReset = () => {
@@ -132,8 +143,8 @@ function ShortenTab() {
                 <Link2 className="h-3.5 w-3.5" /> NikkaLink Short Link
               </label>
               <div className="h-11 rounded-lg border-2 border-primary bg-primary/5 px-3 flex items-center justify-between gap-2">
-                <span className="text-sm font-semibold text-primary truncate">{result.short_url}</span>
-                <button onClick={handleCopy} className="shrink-0 text-primary hover:text-primary/70 transition-colors">
+                <span className="text-sm font-semibold text-primary truncate">{buildPublicShortUrl(result.short_code)}</span>
+                <button type="button" onClick={handleCopy} className="shrink-0 text-primary hover:text-primary/70 transition-colors">
                   {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
                 </button>
               </div>
@@ -142,22 +153,25 @@ function ShortenTab() {
             {/* Action Buttons */}
             <div className="grid grid-cols-2 gap-2">
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11"
-                onClick={() => window.open(result.short_url, "_blank")}
+                onClick={() => window.open(buildPublicShortUrl(result.short_code), "_blank", "noopener,noreferrer")}
               >
                 <ExternalLink className="h-4 w-4" /> Visit URL
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11"
-                onClick={() => window.open(`${API_URL}/api/v1/urls/${result.short_code}/qr`, "_blank")}
+                onClick={() => window.open(`${API_URL}/api/v1/urls/qr/generate?url=${encodeURIComponent(buildPublicShortUrl(result.short_code))}`, "_blank", "noopener,noreferrer")}
               >
                 <QrCode className="h-4 w-4" /> QR Code
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11"
@@ -166,6 +180,7 @@ function ShortenTab() {
                 <Share2 className="h-4 w-4" /> Share
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11"
@@ -178,6 +193,7 @@ function ShortenTab() {
 
             {/* Shorten another */}
             <Button
+              type="button"
               onClick={handleReset}
               className="w-full h-11 text-sm font-semibold gap-2"
             >
@@ -256,6 +272,7 @@ function QRTab() {
             {error && <p className="text-xs text-destructive mt-1">{error}</p>}
           </div>
           <Button
+            type="button"
             onClick={handleGenerate}
             disabled={isLoading || !inputUrl}
             className="w-full h-11 text-sm font-semibold"
@@ -298,12 +315,14 @@ function QRTab() {
             {/* Action buttons */}
             <div className="grid grid-cols-2 gap-2">
               <Button
+                type="button"
                 onClick={handleDownload}
                 className="h-11 gap-2 text-sm"
               >
                 <Download className="h-4 w-4" /> Download PNG
               </Button>
               <Button
+                type="button"
                 variant="outline"
                 onClick={handleReset}
                 className="h-11 gap-2 text-sm"
@@ -329,6 +348,7 @@ export function LiveShortener() {
         {/* Tab Header */}
         <div className="grid grid-cols-2 border-b border-border/50">
           <button
+            type="button"
             onClick={() => setTab("shorten")}
             className={`flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-all ${
               tab === "shorten"
@@ -339,6 +359,7 @@ export function LiveShortener() {
             <Link2 className="h-4 w-4" /> Shorten a Link
           </button>
           <button
+            type="button"
             onClick={() => setTab("qr")}
             className={`flex items-center justify-center gap-2 px-6 py-4 text-sm font-semibold transition-all ${
               tab === "qr"

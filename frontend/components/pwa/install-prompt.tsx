@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Share, PlusSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 export function InstallPrompt() {
   const [isIOS, setIsIOS] = useState(false);
@@ -77,7 +78,7 @@ export function InstallPrompt() {
         <div className="flex flex-col gap-3 max-w-md mx-auto">
           <div className="flex items-start justify-between">
             <div className="flex gap-3">
-              <img src="/icon.png" alt="NikkaLink" className="w-12 h-12 rounded-xl shadow-sm" />
+              <BrandLogo showWordmark={false} iconClassName="h-12 w-12" />
               <div>
                 <h3 className="font-semibold text-foreground">Install NikkaLink</h3>
                 <p className="text-sm text-muted-foreground leading-tight">
@@ -103,7 +104,7 @@ export function InstallPrompt() {
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between">
             <div className="flex gap-3 items-center">
-              <img src="/icon.png" alt="NikkaLink" className="w-12 h-12 rounded-xl shadow-sm" />
+                <BrandLogo showWordmark={false} iconClassName="h-12 w-12" />
               <div>
                 <h3 className="font-semibold text-foreground flex items-center gap-1">
                   🚀 Install NikkaLink

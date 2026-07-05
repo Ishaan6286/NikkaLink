@@ -17,12 +17,12 @@ import {
   Home,
   LogOut,
 } from "lucide-react";
-import Image from "next/image";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useLogout, useMe } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useState } from "react";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 const navItems = [
   { href: "/", label: "Go to Home", icon: Home },
@@ -82,9 +82,7 @@ export function Sidebar() {
     <div className="flex h-full flex-col gap-4">
       {/* Logo */}
       <div className="flex items-center px-3 py-2">
-        <Link href="/" className="flex items-center hover:opacity-90 transition-opacity">
-          <Image src="/logo.png" alt="NikkaLink Logo" width={156} height={40} className="h-10 w-auto object-contain" priority />
-        </Link>
+        <BrandLogo href="/" iconClassName="h-10 w-10" wordmarkClassName="text-lg" />
       </div>
 
       {/* Kbd hint */}

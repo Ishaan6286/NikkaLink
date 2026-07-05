@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     DEBUG: bool = False
     BASE_URL: str = "http://localhost:8000"
+    PUBLIC_APP_URL: str | None = None
 
     # ── Database ─────────────────────────────────────────────────────────
     DATABASE_URL: str = "postgresql+asyncpg://shortener:shortener@localhost:5432/shortener"
@@ -76,6 +77,11 @@ class Settings(BaseSettings):
     @property
     def is_development(self) -> bool:
         return self.ENVIRONMENT == "development"
+
+    @property
+    def public_app_url(self) -> str:
+        base_url = self.PUBLIC_APP_URL or self.BASE_URL
+        return base_url.rstrip("/")
 
 
 # Singleton settings instance

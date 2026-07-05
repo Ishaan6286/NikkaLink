@@ -35,6 +35,7 @@ RUN apt-get update && \
 COPY --from=builder /install /usr/local
 
 WORKDIR /app
+ENV PYTHONPATH=/app
 
 # Copy application code
 COPY alembic/ ./alembic/

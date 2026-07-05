@@ -3,12 +3,12 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import { Loader2, ArrowLeft, ShieldCheck, Zap, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 // Official Google "G" icon SVG
 function GoogleIcon() {
@@ -81,16 +81,7 @@ function LoginContent() {
 
       {/* Logo */}
       <div className="flex justify-center mb-8 pt-8 sm:pt-0">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/logo.png"
-            alt="NikkaLink Logo"
-            width={192}
-            height={48}
-            className="h-12 w-auto object-contain"
-            priority
-          />
-        </Link>
+        <BrandLogo href="/" iconClassName="h-11 w-11" wordmarkClassName="text-2xl" />
       </div>
 
       {/* Card */}

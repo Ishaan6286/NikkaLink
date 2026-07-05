@@ -39,10 +39,10 @@ class URL(UUIDMixin, TimestampMixin, Base):
         unique=True,
         nullable=True,
     )
-    owner_id: Mapped[uuid.UUID] = mapped_column(
+    owner_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
         index=True,
     )
     expires_at: Mapped[datetime | None] = mapped_column(
@@ -71,7 +71,7 @@ class URL(UUIDMixin, TimestampMixin, Base):
     )
 
     # Relationships
-    owner: Mapped["User"] = relationship(  # noqa: F821
+    owner: Mapped["User | None"] = relationship(  # noqa: F821
         "User",
         back_populates="urls",
     )

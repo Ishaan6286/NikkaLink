@@ -13,7 +13,7 @@ Endpoints:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import Response
 
 from app.api.deps import get_current_active_user, get_optional_user, get_url_service
@@ -59,11 +59,14 @@ async def generate_qr_from_url(
 )
 async def create_url(
     data: URLCreate,
+    request: Request,
     current_user: User | None = Depends(get_optional_user),
     url_service: URLService = Depends(get_url_service),
 ) -> URLResponse:
     owner_id = current_user.id if current_user else None
-    return await url_service.create_short_url(data, owner_id)
+    settings = get_settings()
+    public_app_url = request.headers.get("Origin") or settings.public_app_url
+    return await url_service.create_short_url(data, owner_id, public_app_url=public_app_url)
 
 
 @router.post(
@@ -169,13 +172,15 @@ async def delete_url(
 )
 async def get_qr_code(
     short_code: str,
+    request: Request,
     current_user: User | None = Depends(get_optional_user),
     url_service: URLService = Depends(get_url_service),
 ) -> Response:
     # Verify URL exists
     url_response = await url_service.get_url_by_short_code(short_code)
     settings = get_settings()
-    short_url = f"{settings.BASE_URL.rstrip('/')}/{short_code}"
+    public_app_url = request.headers.get("Origin") or settings.public_app_url
+    short_url = f"{public_app_url.rstrip('/')}/{short_code}"
     qr_bytes = generate_qr_code(short_url)
     return Response(
         content=qr_bytes,

@@ -71,7 +71,7 @@ class URLResponse(BaseModel):
     short_url: str
     original_url: str
     custom_alias: str | None = None
-    owner_id: uuid.UUID
+    owner_id: uuid.UUID | None
     expires_at: datetime | None = None
     is_active: bool
     tags: list[str] | None = None

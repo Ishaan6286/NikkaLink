@@ -30,8 +30,8 @@ import {
 import { BarChart2, MousePointer2, Users, ArrowLeft } from "lucide-react";
 import { StatCard } from "@/components/dashboard/StatCard";
 import Link from "next/link";
-import Image from "next/image";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
+import { BrandLogo } from "@/components/shared/BrandLogo";
 
 const COLORS = [
   "#7c6af7",
@@ -72,7 +72,7 @@ export default function PublicAnalyticsPage({ params }: { params: Promise<{ code
       <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center">
-            <Image src="/logo.png" alt="NikkaLink" width={156} height={40} className="h-10 w-auto object-contain" />
+            <BrandLogo iconClassName="h-10 w-10" wordmarkClassName="text-lg" />
           </Link>
           <div className="flex items-center gap-4">
             <ThemeToggle />

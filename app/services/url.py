@@ -33,7 +33,7 @@ class URLService:
 
     def _build_short_url(self, short_code: str) -> str:
         """Build the full shortened URL."""
-        base = self._settings.BASE_URL.rstrip("/")
+        base = self._settings.public_app_url
         return f"{base}/{short_code}"
 
     def _to_response(self, url: URL) -> URLResponse:
@@ -57,6 +57,7 @@ class URLService:
         self,
         data: URLCreate,
         owner_id: uuid.UUID | None,
+        public_app_url: str | None = None,
     ) -> URLResponse:
         """
         Create a new shortened URL.
@@ -97,6 +98,8 @@ class URLService:
         })
 
         response = self._to_response(url)
+        if public_app_url:
+            response.short_url = f"{public_app_url.rstrip('/')}/{short_code}"
         await logger.ainfo(
             "url_created",
             short_code=short_code,
