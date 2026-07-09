@@ -10,13 +10,13 @@ from __future__ import annotations
 
 import time
 
-import redis.asyncio as redis
 from fastapi import APIRouter, Depends
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_db, get_redis
+from app.api.deps import get_db
 from app.core.config import get_settings
+from app.core.redis_client import get_redis, is_redis_available
 from app.schemas.health import ComponentHealth, HealthResponse, ReadinessResponse
 
 router = APIRouter(tags=["Health"])
@@ -41,11 +41,10 @@ async def health() -> HealthResponse:
     "/ready",
     response_model=ReadinessResponse,
     summary="Readiness probe",
-    description="Checks connectivity to PostgreSQL and Redis. Returns 200 only if all components are healthy.",
+    description="Checks connectivity to PostgreSQL and Redis. PostgreSQL is required; Redis is optional.",
 )
 async def ready(
     session: AsyncSession = Depends(get_db),
-    redis_client: redis.Redis = Depends(get_redis),
 ) -> ReadinessResponse:
     components: dict[str, ComponentHealth] = {}
 
@@ -64,21 +63,35 @@ async def ready(
             message=str(e),
         )
 
-    # Check Redis
-    try:
-        start = time.perf_counter()
-        await redis_client.ping()
-        latency = (time.perf_counter() - start) * 1000
+    # Check Redis (optional — app runs without it)
+    redis_client = await get_redis()
+    if redis_client is None:
         components["redis"] = ComponentHealth(
-            status="healthy",
-            latency_ms=round(latency, 2),
+            status="degraded",
+            message="Redis unavailable — caching and rate limiting disabled",
         )
-    except Exception as e:
-        components["redis"] = ComponentHealth(
-            status="unhealthy",
-            message=str(e),
-        )
+    else:
+        try:
+            start = time.perf_counter()
+            await redis_client.ping()
+            latency = (time.perf_counter() - start) * 1000
+            components["redis"] = ComponentHealth(
+                status="healthy",
+                latency_ms=round(latency, 2),
+            )
+        except Exception as e:
+            components["redis"] = ComponentHealth(
+                status="degraded",
+                message=str(e),
+            )
 
-    overall = "healthy" if all(c.status == "healthy" for c in components.values()) else "unhealthy"
+    postgres_healthy = components["postgresql"].status == "healthy"
+    redis_healthy = is_redis_available()
+    if postgres_healthy and redis_healthy:
+        overall = "healthy"
+    elif postgres_healthy:
+        overall = "degraded"
+    else:
+        overall = "unhealthy"
 
     return ReadinessResponse(status=overall, components=components)

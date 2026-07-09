@@ -21,10 +21,10 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.deps import close_redis, get_redis
 from app.api.v1.router import api_v1_router, health_router, redirect_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
+from app.core.redis_client import close_redis, init_redis, is_redis_available
 from app.db.session import engine
 from app.middleware.correlation_id import CorrelationIDMiddleware
 from app.middleware.logging import RequestLoggingMiddleware
@@ -58,13 +58,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # ── Startup ──────────────────────────────────────────────────────────
     await logger.ainfo("application_starting", version=get_settings().APP_VERSION)
 
-    # Warm up Redis connection
-    redis_client = await get_redis()
-    try:
-        await redis_client.ping()
-        await logger.ainfo("redis_connected")
-    except Exception as e:
-        await logger.awarning("redis_connection_failed", error=str(e))
+    # Warm up Redis connection (non-fatal if unavailable)
+    await init_redis()
+    if not is_redis_available():
+        await logger.awarning("redis_unavailable_at_startup")
 
     yield
 
@@ -142,13 +139,7 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestIDMiddleware)
     app.add_middleware(CorrelationIDMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
-
-    # Rate limiter needs Redis — use lazy initialization
-    # We wrap in a startup-safe manner
-    @app.on_event("startup")
-    async def _add_rate_limiter() -> None:
-        redis_client = await get_redis()
-        app.add_middleware(RateLimiterMiddleware, redis_client=redis_client)
+    app.add_middleware(RateLimiterMiddleware)
 
     # ── Routers ──────────────────────────────────────────────────────────
     app.include_router(api_v1_router)
