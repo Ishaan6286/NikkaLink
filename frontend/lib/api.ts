@@ -1,19 +1,15 @@
 // ─── Axios instance for backend API calls ────────────────────────────────────
-// Authentication is handled by NextAuth HTTP-only cookies (no localStorage JWT).
-// Cookies are sent automatically with every same-origin request.
 import axios from "axios";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { getApiUrl } from "@/lib/env";
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: getApiUrl(),
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
-  // Include credentials (session cookies) on cross-origin requests if needed
   withCredentials: true,
 });
 
-// Redirect to login on 401 (session expired or invalid)
 api.interceptors.response.use(
   (response) => response,
   (error) => {

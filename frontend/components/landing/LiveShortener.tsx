@@ -20,18 +20,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import api from "@/lib/api";
+import { buildApiDocsUrl, buildPublicShortUrl, getApiUrl } from "@/lib/env";
 import { toast } from "sonner";
 import Image from "next/image";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const PUBLIC_APP_URL =
-  process.env.NEXT_PUBLIC_APP_URL ||
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  "http://localhost:3000";
-
-function buildPublicShortUrl(shortCode: string) {
-  return `${PUBLIC_APP_URL.replace(/\/$/, "")}/${shortCode}`;
-}
 
 const urlSchema = z.object({
   url: z.string().url("Please enter a valid URL (include https://)"),
@@ -166,7 +157,7 @@ function ShortenTab() {
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11"
-                onClick={() => window.open(`${API_URL}/api/v1/urls/qr/generate?url=${encodeURIComponent(buildPublicShortUrl(result.short_code))}`, "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(`${getApiUrl()}/api/v1/urls/qr/generate?url=${encodeURIComponent(buildPublicShortUrl(result.short_code))}`, "_blank", "noopener,noreferrer")}
               >
                 <QrCode className="h-4 w-4" /> QR Code
               </Button>
@@ -225,7 +216,7 @@ function QRTab() {
     try {
       // Use the public QR endpoint — returns a PNG image blob
       const res = await fetch(
-        `${API_URL}/api/v1/urls/qr/generate?url=${encodeURIComponent(inputUrl)}`
+        `${getApiUrl()}/api/v1/urls/qr/generate?url=${encodeURIComponent(inputUrl)}`
       );
       if (!res.ok) throw new Error("QR generation failed");
       const blob = await res.blob();

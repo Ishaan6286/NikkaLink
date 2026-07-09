@@ -9,18 +9,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { buildPublicShortUrl, getPublicAppUrl } from "@/lib/env";
+import { urlService } from "@/services/urlService";
 
 function QRCard({ url }: { url: { short_code: string; original_url: string; is_active: boolean; total_clicks: number } }) {
-  const qrUrl = `${API_URL}/api/v1/urls/${url.short_code}/qr`;
-  const shortUrl = `${API_URL.replace(":8000", ":3000")}/${url.short_code}`;
+  const qrUrl = urlService.getQRCodeURL(url.short_code);
+  const shortUrl = buildPublicShortUrl(url.short_code);
 
   const handleDownload = async () => {
     try {
-      const res = await fetch(qrUrl, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
-      });
+      const res = await fetch(qrUrl);
       if (!res.ok) throw new Error("Failed to fetch QR code");
       const blob = await res.blob();
       const link = document.createElement("a");

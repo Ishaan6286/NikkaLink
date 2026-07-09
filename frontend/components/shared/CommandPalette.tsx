@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useLogout } from "@/hooks/useAuth";
+import { buildApiDocsUrl } from "@/lib/env";
 
 interface CommandPaletteProps {
   onCreateURL?: () => void;
@@ -86,7 +87,7 @@ export function CommandPalette({ onCreateURL }: CommandPaletteProps) {
           </CommandItem>
           <CommandItem
             onSelect={() =>
-              run(() => window.open("http://localhost:8000/docs", "_blank"))
+              run(() => window.open(buildApiDocsUrl(), "_blank"))
             }
           >
             <ExternalLink className="mr-2 h-4 w-4" />

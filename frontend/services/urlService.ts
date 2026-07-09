@@ -1,5 +1,6 @@
 // ─── URL service ──────────────────────────────────────────────────────────────
 import api from "@/lib/api";
+import { buildApiDocsUrl, buildPublicShortUrl, getApiUrl } from "@/lib/env";
 import {
   CreateURLPayload,
   PaginatedResponse,
@@ -41,14 +42,14 @@ export const urlService = {
   },
 
   getQRCodeURL(shortCode: string): string {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    return `${apiUrl}/api/v1/urls/${shortCode}/qr`;
+    return `${getApiUrl()}/api/v1/urls/${shortCode}/qr`;
   },
 
   getShortURL(shortCode: string): string {
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    return `${apiUrl}/${shortCode}`;
+    return buildPublicShortUrl(shortCode);
+  },
+
+  getApiDocsUrl(): string {
+    return buildApiDocsUrl();
   },
 };

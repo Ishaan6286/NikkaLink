@@ -23,7 +23,7 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: BASE_URL
-        sync: false
+        value: https://nikkalink.onrender.com
       - key: PUBLIC_APP_URL
         value: https://nikkalink.vercel.app
       - key: CORS_ORIGINS

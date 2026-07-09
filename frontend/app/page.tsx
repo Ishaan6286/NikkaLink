@@ -27,6 +27,7 @@ import { useSession } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { buildApiDocsUrl } from "@/lib/env";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -543,7 +544,7 @@ export default function LandingPage() {
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
                 <li><Link href="/login" className="hover:text-primary transition-colors">Pricing</Link></li>
-                <li><a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">API</a></li>
+                <li><a href={buildApiDocsUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">API</a></li>
                 <li><Link href="/login" className="hover:text-primary transition-colors">Roadmap</Link></li>
               </ul>
             </div>
@@ -551,7 +552,7 @@ export default function LandingPage() {
               <p className="text-sm font-semibold mb-4">Resources</p>
               <ul className="space-y-2.5 text-sm text-muted-foreground">
                 <li><Link href="/login" className="hover:text-primary transition-colors">Blog</Link></li>
-                <li><a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Documentation</a></li>
+                <li><a href={buildApiDocsUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Documentation</a></li>
                 <li><Link href="/login" className="hover:text-primary transition-colors">Guides</Link></li>
                 <li><Link href="/login" className="hover:text-primary transition-colors">Support</Link></li>
               </ul>

@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCreateURL } from "@/hooks/useURLs";
+import { getPublicAppUrl } from "@/lib/env";
 import { Loader2, Link2, Sparkles } from "lucide-react";
 
 const schema = z.object({
@@ -96,7 +97,7 @@ export function CreateURLModal({ open, onOpenChange }: CreateURLModalProps) {
             <Label htmlFor="custom_alias">Custom Alias (optional)</Label>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground whitespace-nowrap">
-                localhost:8000/
+                {getPublicAppUrl().replace(/^https?:\/\//, "")}/
               </span>
               <Input
                 id="custom_alias"

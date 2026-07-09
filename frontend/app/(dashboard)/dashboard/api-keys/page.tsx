@@ -17,8 +17,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { getApiUrl } from "@/lib/env";
+import { urlService } from "@/services/urlService";
 
 function CodeBlock({ code, language = "bash" }: { code: string; language?: string }) {
   const [copied, setCopied] = useState(false);
@@ -52,6 +52,8 @@ function CodeBlock({ code, language = "bash" }: { code: string; language?: strin
 export default function APIKeysPage() {
   const [token, setToken] = useState<string | null>(null);
   const [visible, setVisible] = useState(false);
+  const apiUrl = getApiUrl();
+  const apiDocsUrl = urlService.getApiDocsUrl();
 
   useEffect(() => {
     setToken(localStorage.getItem("access_token"));
@@ -74,25 +76,25 @@ export default function APIKeysPage() {
     : null;
 
   const exampleCurl = token
-    ? `curl -X GET "${API_URL}/api/v1/urls" \\
+    ? `curl -X GET "${apiUrl}/api/v1/urls" \\
   -H "Authorization: Bearer ${token}" \\
   -H "Content-Type: application/json"`
-    : `curl -X GET "${API_URL}/api/v1/urls" \\
+    : `curl -X GET "${apiUrl}/api/v1/urls" \\
   -H "Authorization: Bearer <your-token>" \\
   -H "Content-Type: application/json"`;
 
   const exampleCreateURL = token
-    ? `curl -X POST "${API_URL}/api/v1/urls" \\
+    ? `curl -X POST "${apiUrl}/api/v1/urls" \\
   -H "Authorization: Bearer ${token}" \\
   -H "Content-Type: application/json" \\
   -d '{"original_url": "https://example.com", "alias": "my-link"}'`
-    : `curl -X POST "${API_URL}/api/v1/urls" \\
+    : `curl -X POST "${apiUrl}/api/v1/urls" \\
   -H "Authorization: Bearer <your-token>" \\
   -H "Content-Type: application/json" \\
   -d '{"original_url": "https://example.com", "alias": "my-link"}'`;
 
   const exampleJS = token
-    ? `const response = await fetch("${API_URL}/api/v1/urls", {
+    ? `const response = await fetch("${apiUrl}/api/v1/urls", {
   method: "POST",
   headers: {
     "Authorization": "Bearer ${token.slice(0, 20)}...",
@@ -105,7 +107,7 @@ export default function APIKeysPage() {
 });
 const data = await response.json();
 console.log(data.short_url);`
-    : `const response = await fetch("${API_URL}/api/v1/urls", {
+    : `const response = await fetch("${apiUrl}/api/v1/urls", {
   method: "POST",
   headers: {
     "Authorization": "Bearer <your-token>",
@@ -176,7 +178,7 @@ console.log(data.short_url);`
                 <RefreshCw className="h-3 w-3" />
                 Refresh
               </Button>
-              <Button size="sm" variant="ghost" className="gap-2 h-8 text-xs ml-auto" render={<a href={`${API_URL}/docs`} target="_blank" rel="noreferrer" />} nativeButton={false}>
+              <Button size="sm" variant="ghost" className="gap-2 h-8 text-xs ml-auto" render={<a href={apiDocsUrl} target="_blank" rel="noreferrer" />} nativeButton={false}>
                 <ExternalLink className="h-3 w-3" />
                 API Docs
               </Button>
@@ -239,8 +241,8 @@ console.log(data.short_url);`
         </div>
         <p className="text-xs text-muted-foreground">
           Full interactive docs available at{" "}
-          <a href={`${API_URL}/docs`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-            {API_URL}/docs
+          <a href={apiDocsUrl} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+            {apiDocsUrl}
           </a>
         </p>
       </div>
