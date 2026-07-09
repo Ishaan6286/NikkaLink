@@ -16,6 +16,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from app.core.config import get_settings
+from app.db.session import _database_engine_config
 
 # Import Base and all models so Alembic can detect them
 from app.db.base import Base
@@ -31,9 +32,10 @@ if config.config_file_name is not None:
 # Target metadata for autogenerate
 target_metadata = Base.metadata
 
-# Override sqlalchemy.url from environment
+# Override sqlalchemy.url from environment (strip sslmode for asyncpg)
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+_engine_url, _connect_args = _database_engine_config(settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", _engine_url)
 
 
 def run_migrations_offline() -> None:
@@ -63,10 +65,13 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations using an async engine."""
+    configuration = config.get_section(config.config_ini_section, {})
+    configuration["sqlalchemy.url"] = _engine_url
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        connect_args=_connect_args,
     )
 
     async with connectable.connect() as connection:

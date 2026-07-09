@@ -12,12 +12,11 @@ from collections.abc import AsyncGenerator
 from typing import Annotated
 
 import redis.asyncio as redis
-import structlog
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.exceptions import AuthenticationError
+from app.core.redis_client import close_redis, get_redis
 from app.core.security import decode_token
 from app.db.session import async_session_factory
 from app.models.user import User
@@ -27,31 +26,8 @@ from app.services.auth import AuthService
 from app.services.cache import CacheService
 from app.services.url import URLService
 
-logger = structlog.get_logger()
-
-# ── Redis Connection Pool (singleton) ────────────────────────────────────────
-
-_redis_pool: redis.Redis | None = None
-
-
-async def get_redis() -> redis.Redis:
-    """Get the shared Redis connection pool."""
-    global _redis_pool
-    if _redis_pool is None:
-        settings = get_settings()
-        _redis_pool = redis.from_url(
-            settings.REDIS_URL,
-            decode_responses=True,
-        )
-    return _redis_pool
-
-
-async def close_redis() -> None:
-    """Close the Redis connection pool on shutdown."""
-    global _redis_pool
-    if _redis_pool is not None:
-        await _redis_pool.close()
-        _redis_pool = None
+# Re-export Redis helpers for backward compatibility
+__all__ = ["close_redis", "get_redis"]
 
 
 # ── Database Session ─────────────────────────────────────────────────────────
@@ -74,7 +50,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def get_cache_service(
-    redis_client: redis.Redis = Depends(get_redis),
+    redis_client: redis.Redis | None = Depends(get_redis),
 ) -> CacheService:
     """Construct CacheService."""
     return CacheService(redis_client)

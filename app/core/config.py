@@ -8,6 +8,7 @@ for local development. In production, set these via Docker env or .env file.
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlparse
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -38,8 +39,11 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = 30
 
     # ── Redis ────────────────────────────────────────────────────────────
-    REDIS_URL: str = "redis://localhost:6379/0"
+    # Leave unset in production to auto-resolve from Upstash credentials.
+    REDIS_URL: str | None = None
     REDIS_CACHE_TTL: int = 300  # 5 minutes
+    UPSTASH_REDIS_REST_URL: str | None = None
+    UPSTASH_REDIS_REST_TOKEN: str | None = None
 
     # ── JWT ───────────────────────────────────────────────────────────────
     JWT_SECRET_KEY: str = "CHANGE-THIS-TO-A-LONG-RANDOM-SECRET-KEY"
@@ -82,6 +86,35 @@ class Settings(BaseSettings):
     def public_app_url(self) -> str:
         base_url = self.PUBLIC_APP_URL or self.BASE_URL
         return base_url.rstrip("/")
+
+    @property
+    def resolved_redis_url(self) -> str | None:
+        """
+        Resolve the Redis connection URL.
+
+        Priority:
+          1. Explicit REDIS_URL (e.g. local Docker Redis)
+          2. Upstash REST credentials → TLS Redis protocol URL
+          3. Localhost default in development only
+
+        Upstash REST credentials are converted to ``rediss://`` because the
+        cache and rate limiter require the Redis protocol (pipelines, sorted
+        sets), not the Upstash HTTP REST API.
+        """
+        if self.REDIS_URL:
+            return self.REDIS_URL
+
+        if self.UPSTASH_REDIS_REST_URL and self.UPSTASH_REDIS_REST_TOKEN:
+            host = urlparse(self.UPSTASH_REDIS_REST_URL).hostname
+            if host:
+                return (
+                    f"rediss://default:{self.UPSTASH_REDIS_REST_TOKEN}@{host}:6379"
+                )
+
+        if self.is_development:
+            return "redis://localhost:6379/0"
+
+        return None
 
 
 # Singleton settings instance

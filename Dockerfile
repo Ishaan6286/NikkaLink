@@ -1,5 +1,5 @@
 # =============================================================================
-# Multi-stage Dockerfile for URL Shortener API
+# Multi-stage Dockerfile for URL Shortener API (Render-compatible)
 # =============================================================================
 # Stage 1: Build dependencies
 # Stage 2: Production-slim runtime
@@ -41,23 +41,18 @@ ENV PYTHONPATH=/app
 COPY alembic/ ./alembic/
 COPY alembic.ini .
 COPY app/ ./app/
+COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Switch to non-root user
 USER appuser
 
-# Expose port
+# Render injects PORT at runtime (defaults to 8000 for local runs)
+ENV PORT=8000
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD sh -c 'curl -f "http://localhost:${PORT:-8000}/health" || exit 1'
 
-# Run with production Uvicorn settings
-# Workers = 2 * CPU cores + 1 (default 4 for container environments)
-CMD ["python", "-m", "uvicorn", "app.main:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "4", \
-     "--log-level", "info", \
-     "--proxy-headers", \
-     "--forwarded-allow-ips", "*"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

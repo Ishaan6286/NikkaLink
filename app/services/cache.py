@@ -20,9 +20,12 @@ class CacheService:
 
     PREFIX = "urlshort"
 
-    def __init__(self, redis_client: redis.Redis) -> None:
+    def __init__(self, redis_client: redis.Redis | None) -> None:
         self._redis = redis_client
         self._settings = get_settings()
+
+    def _is_available(self) -> bool:
+        return self._redis is not None
 
     def _make_key(self, namespace: str, key: str) -> str:
         """Build a namespaced Redis key."""
@@ -30,6 +33,8 @@ class CacheService:
 
     async def get(self, namespace: str, key: str) -> Any | None:
         """Get a value from cache, returning None on miss."""
+        if not self._is_available():
+            return None
         full_key = self._make_key(namespace, key)
         try:
             data = await self._redis.get(full_key)
@@ -48,6 +53,8 @@ class CacheService:
         ttl: int | None = None,
     ) -> None:
         """Set a value in cache with optional TTL (defaults to config TTL)."""
+        if not self._is_available():
+            return
         full_key = self._make_key(namespace, key)
         ttl = ttl or self._settings.REDIS_CACHE_TTL
         try:
@@ -58,6 +65,8 @@ class CacheService:
 
     async def delete(self, namespace: str, key: str) -> None:
         """Delete a specific key from cache."""
+        if not self._is_available():
+            return
         full_key = self._make_key(namespace, key)
         try:
             await self._redis.delete(full_key)
@@ -66,6 +75,8 @@ class CacheService:
 
     async def invalidate_pattern(self, pattern: str) -> None:
         """Delete all keys matching a pattern (use sparingly)."""
+        if not self._is_available():
+            return
         full_pattern = f"{self.PREFIX}:{pattern}"
         try:
             cursor = 0
@@ -84,6 +95,8 @@ class CacheService:
 
     async def ping(self) -> bool:
         """Check Redis connectivity."""
+        if not self._is_available():
+            return False
         try:
             return await self._redis.ping()
         except Exception:

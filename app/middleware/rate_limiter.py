@@ -16,6 +16,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
 from app.core.config import get_settings
+from app.core.redis_client import get_redis
 
 logger = structlog.get_logger()
 
@@ -26,9 +27,8 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
     # Paths exempt from rate limiting
     EXEMPT_PATHS = {"/health", "/ready", "/docs", "/redoc", "/openapi.json"}
 
-    def __init__(self, app, redis_client: redis.Redis) -> None:  # type: ignore[override]
+    def __init__(self, app) -> None:  # type: ignore[override]
         super().__init__(app)
-        self._redis = redis_client
         self._settings = get_settings()
 
     def _get_client_ip(self, request: Request) -> str:
@@ -71,13 +71,17 @@ class RateLimiterMiddleware(BaseHTTPMiddleware):
         if request.url.path in self.EXEMPT_PATHS:
             return await call_next(request)
 
+        redis_client = await get_redis()
+        if redis_client is None:
+            return await call_next(request)
+
         key, max_requests = self._get_rate_limit_key(request)
         window = self._settings.RATE_LIMIT_WINDOW_SECONDS
         now = time.time()
         window_start = now - window
 
         try:
-            pipe = self._redis.pipeline()
+            pipe = redis_client.pipeline()
             # Remove expired entries
             pipe.zremrangebyscore(key, 0, window_start)
             # Add current request
