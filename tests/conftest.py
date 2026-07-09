@@ -2,7 +2,7 @@
 Shared pytest fixtures for the URL Shortener test suite.
 
 Provides:
-  - Async SQLite test database (no PostgreSQL dependency for unit tests)
+  - PostgreSQL test database with Alembic-managed schema
   - fakeredis for Redis mocking
   - httpx AsyncClient for API integration tests
   - Factory fixtures for users, tokens, and URLs
@@ -10,16 +10,18 @@ Provides:
 
 from __future__ import annotations
 
-import asyncio
+import os
 import uuid
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
-from unittest.mock import AsyncMock
 
 import fakeredis.aioredis
 import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -29,7 +31,6 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import Settings, get_settings
 from app.core.security import create_access_token, hash_password
-from app.db.base import Base
 import app.models  # noqa: F401 - ensure models are registered with Base.metadata
 
 TEST_DATABASE_URL = "postgresql+asyncpg://shortener:shortener@postgres:5432/shortener_test"
@@ -48,6 +49,12 @@ def get_test_settings() -> Settings:
     )
 
 
+def _reset_settings_cache() -> None:
+    from app.core import config as config_module
+
+    config_module._settings = None
+
+
 # ── Database Fixtures ────────────────────────────────────────────────────────
 
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
@@ -58,14 +65,27 @@ test_session_factory = async_sessionmaker(
 )
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def setup_database() -> AsyncGenerator[None, None]:
-    """Create tables before each test and drop after."""
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+@pytest.fixture(scope="session", autouse=True)
+def migrate_test_database() -> Generator[None, None, None]:
+    """Apply Alembic migrations to the test database (schema owned by Alembic only)."""
+    os.environ["DATABASE_URL"] = TEST_DATABASE_URL
+    _reset_settings_cache()
+
+    alembic_cfg = Config("alembic.ini")
+    command.upgrade(alembic_cfg, "head")
     yield
+    command.downgrade(alembic_cfg, "base")
+    _reset_settings_cache()
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clean_database() -> AsyncGenerator[None, None]:
+    """Clear table data between tests without recreating schema."""
     async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(
+            text("TRUNCATE TABLE clicks, urls, users RESTART IDENTITY CASCADE")
+        )
+    yield
 
 
 @pytest_asyncio.fixture

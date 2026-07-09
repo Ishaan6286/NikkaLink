@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     PUBLIC_APP_URL: str | None = None
 
     # ── Database ─────────────────────────────────────────────────────────
+    # Backend-only PostgreSQL URL (Alembic-owned schema).
+    # Must be a separate database from the Next.js/Prisma frontend.
     DATABASE_URL: str = "postgresql+asyncpg://shortener:shortener@localhost:5432/shortener"
     DB_POOL_SIZE: int = 20
     DB_MAX_OVERFLOW: int = 10
@@ -52,7 +54,10 @@ class Settings(BaseSettings):
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     # ── CORS ─────────────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    CORS_ORIGINS: list[str] = [
+        "http://localhost:3000",
+        "https://nikkalink.vercel.app",
+    ]
 
     # ── Rate Limiting ────────────────────────────────────────────────────
     RATE_LIMIT_ANONYMOUS: int = 30
@@ -61,6 +66,14 @@ class Settings(BaseSettings):
 
     # ── Short Code ───────────────────────────────────────────────────────
     SHORT_CODE_LENGTH: int = 7
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalize_database_url(cls, v: Any) -> str:
+        """Accept plain postgresql:// URLs and normalize for asyncpg."""
+        if isinstance(v, str) and v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

@@ -54,9 +54,23 @@ graph TD
     Client[Client (Browser/Mobile)] --> Frontend[Next.js Frontend (Port 3000)]
     Client -->|API Requests / Redirects| Backend[FastAPI Backend (Port 8000)]
     Frontend -->|API Requests| Backend
+    Frontend --> FrontendDB[(Frontend PostgreSQL — Prisma/NextAuth)]
     Backend <--> Redis[(Redis Cache)]
-    Backend <--> DB[(PostgreSQL Database)]
+    Backend <--> BackendDB[(Backend PostgreSQL — Alembic)]
 ```
+
+### Database separation
+
+The frontend and backend each have their **own PostgreSQL database**:
+
+| Service | ORM / migrations | Tables |
+|---------|------------------|--------|
+| **Next.js frontend** | Prisma | `users`, `accounts`, `sessions`, `links`, `qr_codes`, `_prisma_migrations` |
+| **FastAPI backend** | Alembic | `users`, `urls`, `clicks`, `alembic_version` |
+
+Do not point both `DATABASE_URL` values at the same database. Sharing a database causes `DuplicateTableError` when Alembic tries to create tables that Prisma already owns.
+
+For production on Neon, create a **separate database or branch** for the backend (e.g. `nikkalink_api`) and set the backend `DATABASE_URL` to that database only.
 
 ## 📦 Installation & Setup (Docker)
 
@@ -90,8 +104,9 @@ NikkaLink is fully containerized. You can run the entire stack (Backend, Fronten
 
 4. **Run Database Migrations:**
    ```bash
-   docker-compose exec web alembic upgrade head
+   docker-compose exec api alembic upgrade head
    ```
+   Migrations run automatically on Render via the Docker entrypoint. They target the **backend** database only.
 
 The application will now be available at:
 - **Frontend:** http://localhost:3000
@@ -113,12 +128,37 @@ NikkaLink provides a robust REST API. Once the backend is running, navigate to `
 ## 🚀 Deployment Guide
 
 For production deployment, we recommend:
-1. **Database:** Managed PostgreSQL (e.g., Supabase, AWS RDS).
-2. **Cache:** Managed Redis (e.g., Upstash, AWS ElastiCache).
-3. **Backend:** Container orchestration (e.g., AWS ECS, Google Cloud Run, Railway, Render).
-4. **Frontend:** Vercel or Netlify for Next.js hosting.
+1. **Frontend database:** Managed PostgreSQL for Prisma/NextAuth (e.g. Neon) — set `DATABASE_URL` in `frontend/.env`.
+2. **Backend database:** A **separate** managed PostgreSQL instance for Alembic (e.g. a second Neon database or branch) — set `DATABASE_URL` in the backend `.env` / Render env vars.
+3. **Cache:** Managed Redis (e.g. Upstash, AWS ElastiCache).
+4. **Backend:** Container orchestration (e.g. Render, Railway, AWS ECS).
+5. **Frontend:** Vercel or Netlify for Next.js hosting.
 
-Make sure to set `ENVIRONMENT=production`, configure proper CORS origins in `.env`, and use strong `SECRET_KEY` and database passwords.
+### Backend environment variables (Render)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `ENVIRONMENT` | Yes | Set to `production`. |
+| `DEBUG` | Yes | Set to `false`. |
+| `DATABASE_URL` | Yes | Backend-only PostgreSQL URL (`postgresql+asyncpg://...?sslmode=require`). Must **not** be the frontend Prisma database. |
+| `JWT_SECRET_KEY` | Yes | Long random secret for signing API access/refresh tokens. |
+| `BASE_URL` | Yes | Public URL of the FastAPI service (e.g. `https://nikkalink-api.onrender.com`). |
+| `PUBLIC_APP_URL` | Yes | Public URL of the Next.js frontend (used when building short-link URLs). |
+| `CORS_ORIGINS` | Yes | JSON array of allowed frontend origins. |
+| `UPSTASH_REDIS_REST_URL` | Recommended | Upstash REST endpoint for cache and rate limiting. |
+| `UPSTASH_REDIS_REST_TOKEN` | Recommended | Upstash REST token. Omit `REDIS_URL` in production to auto-resolve from these. |
+| `REDIS_URL` | Optional | Explicit Redis URL; overrides Upstash when set (local Docker only). |
+| `REDIS_CACHE_TTL` | Optional | Cache TTL in seconds (default `300`). |
+| `JWT_ALGORITHM` | Optional | Default `HS256`. |
+| `JWT_ACCESS_TOKEN_EXPIRE_MINUTES` | Optional | Default `30`. |
+| `JWT_REFRESH_TOKEN_EXPIRE_DAYS` | Optional | Default `7`. |
+| `RATE_LIMIT_ANONYMOUS` | Optional | Requests per window for anonymous users (default `30`). |
+| `RATE_LIMIT_AUTHENTICATED` | Optional | Requests per window for authenticated users (default `120`). |
+| `RATE_LIMIT_WINDOW_SECONDS` | Optional | Rate limit window (default `60`). |
+| `SHORT_CODE_LENGTH` | Optional | Generated short code length (default `7`). |
+| `PORT` | Auto | Injected by Render; do not set manually. |
+
+Make sure to set `ENVIRONMENT=production`, configure proper CORS origins, and use strong `JWT_SECRET_KEY` and database passwords.
 
 ## 🤝 Contributing
 

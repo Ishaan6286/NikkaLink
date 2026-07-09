@@ -20,12 +20,14 @@ from contextlib import asynccontextmanager
 import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.v1.router import api_v1_router, health_router, redirect_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.redis_client import close_redis, init_redis, is_redis_available
-from app.db.session import engine
+from app.db.session import async_session_factory, engine
+from app.db.validation import BackendDatabaseError, assert_backend_database
 from app.middleware.correlation_id import CorrelationIDMiddleware
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.rate_limiter import RateLimiterMiddleware
@@ -57,6 +59,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # ── Startup ──────────────────────────────────────────────────────────
     await logger.ainfo("application_starting", version=get_settings().APP_VERSION)
+
+    # Ensure DATABASE_URL targets the backend database and PostgreSQL is reachable
+    try:
+        async with async_session_factory() as session:
+            await assert_backend_database(session)
+            await session.execute(text("SELECT 1"))
+        await logger.ainfo("postgresql_connected")
+    except BackendDatabaseError as e:
+        await logger.aerror("backend_database_validation_failed", error=str(e))
+        raise
+    except Exception as e:
+        await logger.aerror("postgresql_connection_failed", error=str(e))
+        raise
 
     # Warm up Redis connection (non-fatal if unavailable)
     await init_redis()

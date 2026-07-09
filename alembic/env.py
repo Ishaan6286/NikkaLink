@@ -1,8 +1,9 @@
 """
 Alembic environment configuration for async migrations.
 
-Connects to PostgreSQL using the same DATABASE_URL as the application
-and runs migrations using SQLAlchemy's async engine.
+Connects to the backend's dedicated PostgreSQL database using DATABASE_URL.
+This database is independent from the Next.js frontend Prisma database.
+Alembic exclusively owns the backend schema (users, urls, clicks).
 """
 
 from __future__ import annotations

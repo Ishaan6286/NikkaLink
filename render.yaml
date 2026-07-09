@@ -1,0 +1,34 @@
+# =============================================================================
+# Render Blueprint — NikkaLink FastAPI Backend
+# =============================================================================
+# Deploy: connect this repo on Render → New Blueprint → select render.yaml
+# Or create a Web Service manually: Runtime = Docker, Health Check = /health
+# Full checklist: docs/RENDER_DEPLOYMENT.md
+# =============================================================================
+
+services:
+  - type: web
+    name: nikkalink-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: BASE_URL
+        sync: false
+      - key: PUBLIC_APP_URL
+        value: https://nikkalink.vercel.app
+      - key: CORS_ORIGINS
+        value: '["http://localhost:3000","https://nikkalink.vercel.app"]'
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false
