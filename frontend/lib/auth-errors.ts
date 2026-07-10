@@ -33,7 +33,7 @@ export function getAuthErrorMessage(errorCode: string | null | undefined): strin
 
   const messages: Record<string, string> = {
     Configuration:
-      "Authentication failed. If using database sessions, check DATABASE_URL and run `npx prisma migrate deploy`. For local dev without a DB, set AUTH_SESSION_STRATEGY=jwt in .env.local. Also verify Google redirect URI matches your app URL.",
+      "Authentication is misconfigured on the server. On Vercel, set AUTH_SECRET, GOOGLE_CLIENT_ID, and GOOGLE_CLIENT_SECRET (copy from frontend/.env), then redeploy. Visit /api/auth/status to see what is missing. In Google Cloud Console, add redirect URI: https://nikkalink.vercel.app/api/auth/callback/google",
     AccessDenied: "Access denied. Your account may not be authorized.",
     Verification: "The sign-in link has expired or was already used.",
     OAuthSignin: "Could not start Google sign-in. Check OAuth client settings.",

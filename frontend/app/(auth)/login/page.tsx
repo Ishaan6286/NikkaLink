@@ -47,10 +47,28 @@ function LoginContent() {
   const authError = searchParams.get("error");
 
   useEffect(() => {
-    if (authError) {
-      toast.error(getAuthErrorMessage(authError));
+    if (!authError) return;
+
+    const showError = async () => {
+      let message = getAuthErrorMessage(authError);
+
+      if (authError === "Configuration") {
+        try {
+          const res = await fetch("/api/auth/status", { cache: "no-store" });
+          const status = (await res.json()) as { issues?: string[] };
+          if (status.issues?.length) {
+            message = `${message} Missing: ${status.issues.join("; ")}.`;
+          }
+        } catch {
+          // keep default message
+        }
+      }
+
+      toast.error(message);
       logAuthError("OAuth returned an error", { error: authError, callbackUrl });
-    }
+    };
+
+    void showError();
   }, [authError, callbackUrl]);
 
   const handleGoogleSignIn = () => {
