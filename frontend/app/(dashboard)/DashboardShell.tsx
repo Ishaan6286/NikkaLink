@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { CreateURLModal } from "@/components/dashboard/CreateURLModal";
 import { AuthErrorBoundary } from "@/components/shared/AuthErrorBoundary";
 import { SmartClipboardBanner } from "@/components/dashboard/SmartClipboardBanner";
+import { BackendSyncBanner } from "@/components/auth/BackendSyncBanner";
 import { AppChrome } from "@/components/shared/AppChrome";
 import { PullToRefresh } from "@/components/shared/PullToRefresh";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,6 +37,7 @@ export default function DashboardShell({
         <div className="flex min-h-screen bg-background" suppressHydrationWarning>
           <Sidebar />
           <main className="flex-1 overflow-hidden">
+            <BackendSyncBanner />
             <PullToRefresh onRefresh={handleRefresh} className="h-full">
               {children}
             </PullToRefresh>

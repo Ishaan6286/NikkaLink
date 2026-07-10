@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { urlService } from "@/services/urlService";
-import { ensureBackendToken } from "@/lib/backend-auth";
+import { BackendAuthError, requireBackendToken } from "@/lib/backend-auth";
 import { CreateURLPayload, URLListParams, UpdateURLPayload } from "@/types";
 
 export const URL_KEYS = {
@@ -20,10 +20,14 @@ export function useURLs(params: URLListParams = {}) {
   return useQuery({
     queryKey: URL_KEYS.list(params),
     queryFn: async () => {
-      await ensureBackendToken();
+      await requireBackendToken();
       return urlService.listURLs(params);
     },
     placeholderData: keepPreviousData,
+    retry: (failureCount, error) => {
+      if (error instanceof BackendAuthError) return false;
+      return failureCount < 1;
+    },
   });
 }
 
@@ -40,17 +44,17 @@ export function useCreateURL() {
 
   return useMutation({
     mutationFn: async (data: CreateURLPayload) => {
-      const hasToken = await ensureBackendToken();
-      if (!hasToken) {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
-      }
+      await requireBackendToken();
       return urlService.createURL(data);
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: URL_KEYS.all });
     },
     onError: (err: unknown) => {
+      if (err instanceof BackendAuthError) {
+        toast.error(err.message, { duration: 8000 });
+        return;
+      }
       const axiosErr = err as {
         message?: string;
         response?: { data?: { detail?: string } };
