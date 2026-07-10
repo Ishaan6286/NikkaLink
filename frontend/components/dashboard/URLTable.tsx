@@ -36,6 +36,7 @@ import { urlService } from "@/services/urlService";
 import { useDeleteURL } from "@/hooks/useURLs";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { QRModal } from "@/components/dashboard/QRModal";
+import { HealthBadge } from "@/components/dashboard/HealthBadge";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -94,6 +95,7 @@ export function URLTable({ urls, isLoading }: URLTableProps) {
               <TableHead>Created</TableHead>
               <TableHead>Expires</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Health</TableHead>
               <TableHead className="w-[60px]" />
             </TableRow>
           </TableHeader>
@@ -145,6 +147,10 @@ export function URLTable({ urls, isLoading }: URLTableProps) {
                         >
                           {url.is_active ? "Active" : "Inactive"}
                         </Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        <HealthBadge shortCode={url.short_code} />
                       </TableCell>
 
                       <TableCell>

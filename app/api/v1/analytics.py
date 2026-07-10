@@ -10,6 +10,7 @@ Endpoints:
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse, Response
 
 from app.api.deps import get_analytics_service, get_optional_user, get_url_service
 from app.core.exceptions import AuthorizationError
@@ -91,3 +92,63 @@ async def get_timeseries(
     url = await url_service.get_url_by_short_code(short_code)
 
     return await analytics_service.get_time_series(url_id=url.id, days=days)
+
+
+@router.get(
+    "/{short_code}/export/json",
+    summary="Export analytics as JSON",
+)
+async def export_analytics_json(
+    short_code: str,
+    url_service: URLService = Depends(get_url_service),
+    analytics_service: AnalyticsService = Depends(get_analytics_service),
+) -> JSONResponse:
+    url = await url_service.get_url_by_short_code(short_code)
+    summary = await analytics_service.get_summary(
+        url_id=url.id,
+        short_code=url.short_code,
+        original_url=url.original_url,
+        total_clicks=url.total_clicks,
+        created_at=url.created_at,
+    )
+    return JSONResponse(
+        content=summary.model_dump(mode="json"),
+        headers={"Content-Disposition": f'attachment; filename="{short_code}-analytics.json"'},
+    )
+
+
+@router.get(
+    "/{short_code}/export/csv",
+    summary="Export analytics as CSV",
+)
+async def export_analytics_csv(
+    short_code: str,
+    url_service: URLService = Depends(get_url_service),
+    analytics_service: AnalyticsService = Depends(get_analytics_service),
+) -> Response:
+    import csv
+    import io
+
+    url = await url_service.get_url_by_short_code(short_code)
+    summary = await analytics_service.get_summary(
+        url_id=url.id,
+        short_code=url.short_code,
+        original_url=url.original_url,
+        total_clicks=url.total_clicks,
+        created_at=url.created_at,
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["metric", "value"])
+    writer.writerow(["short_code", summary.short_code])
+    writer.writerow(["total_clicks", summary.total_clicks])
+    writer.writerow(["unique_visitors", summary.unique_visitors])
+    for point in summary.time_series:
+        writer.writerow([f"clicks_{point.date}", point.clicks])
+
+    return Response(
+        content=output.getvalue(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="{short_code}-analytics.csv"'},
+    )

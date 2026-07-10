@@ -7,6 +7,9 @@ import { Toaster } from "sonner";
 import { useState, useEffect } from "react";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "next-auth/react";
+import { AuthSessionMonitor } from "@/components/auth/AuthSessionMonitor";
+import { BackendAuthSync } from "@/components/auth/BackendAuthSync";
+import { AuthErrorBoundary } from "@/components/shared/AuthErrorBoundary";
 
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   const orig = console.error;
@@ -34,8 +37,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => { setMounted(true); }, []);
 
   return (
-    <SessionProvider>
-      <QueryClientProvider client={queryClient}>
+    <SessionProvider refetchOnWindowFocus>
+      <AuthErrorBoundary>
+        <AuthSessionMonitor />
+        <BackendAuthSync />
+        <QueryClientProvider client={queryClient}>
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -56,6 +62,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
+      </AuthErrorBoundary>
     </SessionProvider>
   );
 }

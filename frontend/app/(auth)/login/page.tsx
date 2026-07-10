@@ -1,16 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Loader2, ArrowLeft, ShieldCheck, Zap, BarChart2 } from "lucide-react";
+import { Loader2, ArrowLeft, Zap, BarChart2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useSearchParams } from "next/navigation";
 import { BrandLogo } from "@/components/shared/BrandLogo";
+import { getAuthErrorMessage, logAuthError } from "@/lib/auth-errors";
 
-// Official Google "G" icon SVG
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
@@ -40,26 +40,22 @@ const features = [
   { icon: ShieldCheck, text: "Secure & private" },
 ];
 
-// ── Inner component that uses useSearchParams() ───────────────────────────────
-// Must be wrapped in <Suspense> at the page level for static generation.
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState("Signing in…");
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const authError = searchParams.get("error");
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setLoadingText("Signing in…");
-
-    try {
-      // Trigger Google OAuth redirect
-      setTimeout(() => setLoadingText("Redirecting to Google…"), 500);
-      await signIn("google", { callbackUrl });
-    } catch {
-      toast.error("Sign-in failed. Please try again.");
-      setIsLoading(false);
+  useEffect(() => {
+    if (authError) {
+      toast.error(getAuthErrorMessage(authError));
+      logAuthError("OAuth returned an error", { error: authError, callbackUrl });
     }
+  }, [authError, callbackUrl]);
+
+  const handleGoogleSignIn = () => {
+    setIsLoading(true);
+    signIn("google", { callbackUrl });
   };
 
   return (
@@ -69,7 +65,6 @@ function LoginContent() {
       transition={{ duration: 0.4 }}
       className="w-full"
     >
-      {/* Back link */}
       <div className="absolute top-8 left-8 sm:top-12 sm:left-12">
         <Link
           href="/"
@@ -79,14 +74,11 @@ function LoginContent() {
         </Link>
       </div>
 
-      {/* Logo */}
       <div className="flex justify-center mb-8 pt-8 sm:pt-0">
         <BrandLogo href="/" iconClassName="h-11 w-11" wordmarkClassName="text-2xl" />
       </div>
 
-      {/* Card */}
       <div className="rounded-2xl border border-border/50 bg-card shadow-2xl overflow-hidden">
-        {/* Header gradient bar */}
         <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-primary" />
 
         <div className="p-8">
@@ -99,7 +91,6 @@ function LoginContent() {
             </p>
           </div>
 
-          {/* Feature pills */}
           <div className="flex justify-center gap-3 mb-8 flex-wrap">
             {features.map(({ icon: Icon, text }) => (
               <div
@@ -112,7 +103,6 @@ function LoginContent() {
             ))}
           </div>
 
-          {/* Google Sign-In Button */}
           <Button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
@@ -122,7 +112,7 @@ function LoginContent() {
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin text-gray-600" />
-                <span className="text-gray-700">{loadingText}</span>
+                <span className="text-gray-700">Redirecting to Google…</span>
               </>
             ) : (
               <>
@@ -131,38 +121,8 @@ function LoginContent() {
               </>
             )}
           </Button>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border/50" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="bg-card px-3 text-xs text-muted-foreground">
-                Secure authentication
-              </span>
-            </div>
-          </div>
-
-          {/* Trust badges */}
-          <div className="grid grid-cols-3 gap-3 text-center">
-            {[
-              { label: "OAuth 2.0", sub: "Google Verified" },
-              { label: "HTTP-only", sub: "Secure Cookies" },
-              { label: "CSRF", sub: "Protected" },
-            ].map(({ label, sub }) => (
-              <div
-                key={label}
-                className="rounded-lg bg-muted/30 border border-border/30 p-2"
-              >
-                <p className="text-xs font-semibold text-foreground">{label}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t border-border/50 bg-muted/20 px-8 py-4 text-center">
           <p className="text-xs text-muted-foreground">
             By signing in, you agree to our{" "}
@@ -180,10 +140,15 @@ function LoginContent() {
   );
 }
 
-// ── Page export: wraps LoginContent in Suspense ───────────────────────────────
 export default function LoginPage() {
   return (
-    <Suspense fallback={<div className="w-full" />}>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

@@ -54,6 +54,11 @@ class URLUpdate(BaseModel):
     expires_at: datetime | None = None
     is_active: bool | None = None
     tags: list[str] | None = None
+    note_title: str | None = Field(default=None, max_length=200)
+    private_notes: str | None = Field(default=None, max_length=5000)
+    is_favorite: bool | None = None
+    is_pinned: bool | None = None
+    color_label: str | None = Field(default=None, max_length=20)
 
     @field_validator("original_url")
     @classmethod
@@ -76,6 +81,11 @@ class URLResponse(BaseModel):
     is_active: bool
     tags: list[str] | None = None
     total_clicks: int
+    note_title: str | None = None
+    private_notes: str | None = None
+    is_favorite: bool = False
+    is_pinned: bool = False
+    color_label: str | None = None
     created_at: datetime
     updated_at: datetime
 

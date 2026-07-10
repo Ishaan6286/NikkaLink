@@ -32,6 +32,7 @@ from app.middleware.correlation_id import CorrelationIDMiddleware
 from app.middleware.logging import RequestLoggingMiddleware
 from app.middleware.rate_limiter import RateLimiterMiddleware
 from app.middleware.request_id import RequestIDMiddleware
+from app.workers.scheduler import start_background_workers, stop_background_workers
 
 
 def configure_logging() -> None:
@@ -78,9 +79,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     if not is_redis_available():
         await logger.awarning("redis_unavailable_at_startup")
 
+    # Start background workers (health checks, analytics aggregation, metadata queue)
+    await start_background_workers()
+
     yield
 
     # ── Shutdown ─────────────────────────────────────────────────────────
+    await stop_background_workers()
     await logger.ainfo("application_shutting_down")
     await close_redis()
     await engine.dispose()
@@ -124,6 +129,26 @@ def create_app() -> FastAPI:
             {
                 "name": "Redirect",
                 "description": "Public URL redirect endpoint.",
+            },
+            {
+                "name": "Link Intelligence",
+                "description": "Metadata, health monitoring, notes, duplicates, aliases, and AI summaries.",
+            },
+            {
+                "name": "Collections",
+                "description": "Folders and collections for organizing links.",
+            },
+            {
+                "name": "Profiles",
+                "description": "Public user profile pages.",
+            },
+            {
+                "name": "Advanced Analytics",
+                "description": "Pre-aggregated analytics dashboards and trending links.",
+            },
+            {
+                "name": "Events",
+                "description": "Real-time SSE event stream and background job observability.",
             },
         ],
         lifespan=lifespan,

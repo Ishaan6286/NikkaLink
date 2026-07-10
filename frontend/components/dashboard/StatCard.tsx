@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { AnimatedCounter } from "@/components/shared/AnimatedCounter";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatCardProps {
@@ -63,7 +64,13 @@ export function StatCard({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold tracking-tight">{value}</div>
+          <div className="text-2xl font-bold tracking-tight">
+            {typeof value === "number" ? (
+              <AnimatedCounter value={value} />
+            ) : (
+              value
+            )}
+          </div>
           {description && (
             <p className="mt-1 text-xs text-muted-foreground">{description}</p>
           )}

@@ -31,6 +31,11 @@ export interface URLItem {
   total_clicks: number;
   tags: string[];
   expires_at: string | null;
+  note_title?: string | null;
+  private_notes?: string | null;
+  is_favorite?: boolean;
+  is_pinned?: boolean;
+  color_label?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -86,6 +91,87 @@ export interface UpdateURLPayload {
   is_active?: boolean;
   expires_at?: string | null;
   tags?: string[];
+  note_title?: string | null;
+  private_notes?: string | null;
+  is_favorite?: boolean;
+  is_pinned?: boolean;
+  color_label?: string | null;
+}
+
+// ── Link Intelligence ────────────────────────────────────────────────────────
+
+export interface LinkMetadata {
+  url_id?: string;
+  canonical_url?: string | null;
+  title?: string | null;
+  description?: string | null;
+  site_name?: string | null;
+  og_image_url?: string | null;
+  favicon_url?: string | null;
+  language?: string | null;
+  content_type?: string | null;
+  fetched_at?: string | null;
+  fetch_error?: string | null;
+}
+
+export interface LinkHealth {
+  url_id: string;
+  status: "healthy" | "warning" | "broken" | "unknown";
+  last_checked_at?: string | null;
+  failure_reason?: string | null;
+  response_time_ms?: number | null;
+  availability_pct: number;
+}
+
+export interface DuplicateCheckResult {
+  is_duplicate: boolean;
+  existing?: {
+    id: string;
+    short_code: string;
+    short_url: string;
+    original_url: string;
+    total_clicks: number;
+    created_at: string;
+  };
+}
+
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string | null;
+  parent_id?: string | null;
+  color?: string | null;
+  sort_order: number;
+  is_pinned: boolean;
+  item_count: number;
+  created_at: string;
+}
+
+export interface LinkSummary {
+  url_id: string;
+  summary: string;
+  key_points?: string[];
+  reading_time_min?: number;
+  language?: string;
+  generated_at: string;
+  prompt_version: string;
+}
+
+export interface PublicProfile {
+  username: string;
+  profile_slug?: string;
+  display_name: string;
+  bio?: string;
+  avatar_url?: string;
+  social_links: Record<string, string>;
+  theme_config: Record<string, unknown>;
+  pinned_links: Array<{
+    short_code: string;
+    original_url: string;
+    note_title?: string;
+    total_clicks: number;
+  }>;
+  public_stats: { total_links: number; total_clicks: number };
 }
 
 export interface URLListParams {

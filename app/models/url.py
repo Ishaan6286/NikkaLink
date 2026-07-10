@@ -69,6 +69,13 @@ class URL(UUIDMixin, TimestampMixin, Base):
         default=0,
         nullable=False,
     )
+    # Link notes & organization
+    note_title: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    private_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_favorite: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    color_label: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    normalized_url: Mapped[str | None] = mapped_column(Text, nullable=True, index=True)
 
     # Relationships
     owner: Mapped["User | None"] = relationship(  # noqa: F821
@@ -79,6 +86,29 @@ class URL(UUIDMixin, TimestampMixin, Base):
         "Click",
         back_populates="url",
         lazy="selectin",
+        cascade="all, delete-orphan",
+    )
+    link_metadata: Mapped["URLMetadata | None"] = relationship(  # noqa: F821
+        "URLMetadata",
+        back_populates="url",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    health: Mapped["URLHealth | None"] = relationship(  # noqa: F821
+        "URLHealth",
+        back_populates="url",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    ai_summary: Mapped["URLSummary | None"] = relationship(  # noqa: F821
+        "URLSummary",
+        back_populates="url",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    collection_items: Mapped[list["CollectionItem"]] = relationship(  # noqa: F821
+        "CollectionItem",
+        back_populates="url",
         cascade="all, delete-orphan",
     )
 

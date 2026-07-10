@@ -10,12 +10,15 @@ Endpoints:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Header, status
 
 from app.api.deps import get_auth_service, get_current_active_user
+from app.core.config import get_settings
+from app.core.exceptions import AuthenticationError
 from app.models.user import User
 from app.schemas.auth import (
     RefreshTokenRequest,
+    SSORequest,
     TokenResponse,
     UserLogin,
     UserRegister,
@@ -52,6 +55,29 @@ async def login(
     auth_service: AuthService = Depends(get_auth_service),
 ) -> TokenResponse:
     return await auth_service.login(data.email, data.password)
+
+
+@router.post(
+    "/sso",
+    response_model=TokenResponse,
+    summary="Trusted SSO from Next.js",
+    description=(
+        "Exchange a verified Google OAuth identity from the Next.js frontend "
+        "for backend JWT tokens. Requires X-Frontend-SSO-Secret header."
+    ),
+)
+async def sso_login(
+    data: SSORequest,
+    x_frontend_sso_secret: str = Header(..., alias="X-Frontend-SSO-Secret"),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> TokenResponse:
+    settings = get_settings()
+    if (
+        not settings.FRONTEND_SSO_SECRET
+        or x_frontend_sso_secret != settings.FRONTEND_SSO_SECRET
+    ):
+        raise AuthenticationError("Invalid SSO credentials")
+    return await auth_service.login_or_register_sso(data.email, data.name)
 
 
 @router.post(

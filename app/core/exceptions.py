@@ -108,6 +108,15 @@ class ExpiredURLError(AppError):
         )
 
 
+class ServiceUnavailableError(AppError):
+    def __init__(self, message: str = "Service temporarily unavailable") -> None:
+        super().__init__(
+            message=message,
+            status_code=503,
+            error_code="SERVICE_UNAVAILABLE",
+        )
+
+
 # ── Exception Handlers ──────────────────────────────────────────────────────
 
 

@@ -68,6 +68,8 @@ class URLRepository(BaseRepository[URL]):
                 or_(
                     URL.original_url.ilike(search_term),
                     URL.short_code.ilike(search_term),
+                    URL.note_title.ilike(search_term),
+                    URL.private_notes.ilike(search_term),
                     URL.tags.any(query.lower()),
                 )
             )

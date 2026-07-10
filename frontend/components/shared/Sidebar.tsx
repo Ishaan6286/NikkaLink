@@ -16,6 +16,7 @@ import {
   Settings,
   Home,
   LogOut,
+  Folder,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -28,6 +29,7 @@ const navItems = [
   { href: "/", label: "Go to Home", icon: Home },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/urls", label: "My Links", icon: Link2 },
+  { href: "/dashboard/collections", label: "Collections", icon: Folder },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart2 },
   { href: "/dashboard/qr-codes", label: "QR Codes", icon: QrCode },
   { href: "/dashboard/api-keys", label: "API Keys", icon: Key },
@@ -53,6 +55,7 @@ function NavLink({
   return (
     <Link
       href={href}
+      prefetch={href.startsWith("/dashboard")}
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 group",

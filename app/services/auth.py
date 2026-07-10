@@ -4,6 +4,8 @@ Authentication service — registration, login, and token refresh.
 
 from __future__ import annotations
 
+import re
+import secrets
 import structlog
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -126,5 +128,53 @@ class AuthService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=new_refresh,
+            expires_in=self._settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+
+    async def login_or_register_sso(self, email: str, name: str | None) -> TokenResponse:
+        """
+        Provision or authenticate a user created via NextAuth Google OAuth.
+
+        Raises:
+            AuthenticationError: If SSO is disabled or misconfigured.
+        """
+        if not self._settings.FRONTEND_SSO_SECRET:
+            raise AuthenticationError("SSO is not configured on the server")
+
+        user = await self._repo.get_by_email(email)
+        if user is None:
+            base_username = re.sub(r"[^a-zA-Z0-9_-]", "_", (email.split("@")[0] or "user")[:40])
+            username = base_username
+            suffix = 0
+            while await self._repo.get_by_username(username):
+                suffix += 1
+                username = f"{base_username[:45]}_{suffix}"
+
+            hashed = hash_password(secrets.token_urlsafe(32))
+            user = await self._repo.create_user(
+                email=email,
+                username=username,
+                hashed_password=hashed,
+            )
+            await logger.ainfo(
+                "user_registered_via_sso",
+                user_id=str(user.id),
+                email=user.email,
+                name=name,
+            )
+        elif not user.is_active:
+            raise AuthenticationError("Account is deactivated")
+
+        access_token = create_access_token(
+            subject=str(user.id),
+            extra_claims={"email": user.email, "username": user.username},
+        )
+        refresh_token = create_refresh_token(subject=str(user.id))
+
+        await logger.ainfo("user_logged_in_via_sso", user_id=str(user.id))
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
             expires_in=self._settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )

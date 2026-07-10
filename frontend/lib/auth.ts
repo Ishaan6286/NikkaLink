@@ -1,11 +1,26 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
+import { reportAuthEnvIssues, useJwtSessions } from "@/lib/auth-env";
+import { logAuthError } from "@/lib/auth-errors";
+
+reportAuthEnvIssues("auth-init");
+
+const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+const jwtMode = useJwtSessions();
+
+function getAdapter() {
+  if (jwtMode) return undefined;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { authAdapter } = require("@/lib/auth-adapter") as {
+    authAdapter: ReturnType<typeof import("@auth/prisma-adapter").PrismaAdapter>;
+  };
+  return authAdapter;
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
-  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
+  adapter: getAdapter(),
+  secret: authSecret,
   trustHost: true,
 
   providers: [
@@ -23,9 +38,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60,   // refresh every 24 hours
+    strategy: jwtMode ? "jwt" : "database",
+    maxAge: 30 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
 
   cookies: {
@@ -43,37 +58,75 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 
-  callbacks: {
-    // Populate session with user data
-    async session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+  callbacks: jwtMode
+    ? {
+        async jwt({ token, account, profile }) {
+          if (account?.provider === "google" && profile) {
+            token.id = profile.sub;
+          }
+          return token;
+        },
+        async session({ session, token }) {
+          if (session.user && token.id) {
+            session.user.id = token.id as string;
+          }
+          return session;
+        },
       }
-      return session;
-    },
+    : {
+        async session({ session, user }) {
+          if (session.user) {
+            session.user.id = user.id;
+          }
+          return session;
+        },
+        async signIn({ user, account, profile }) {
+          if (account?.provider === "google" && profile) {
+            try {
+              const { prisma } = await import("@/lib/prisma");
+              await prisma.user.update({
+                where: { id: user.id },
+                data: {
+                  googleId: profile.sub,
+                  lastLogin: new Date(),
+                  name: profile.name ?? user.name,
+                  image: profile.picture ?? user.image,
+                  emailVerified: new Date(),
+                  provider: "google",
+                },
+              });
+            } catch (error) {
+              logAuthError("signIn callback: user profile sync failed", error);
+            }
+          }
+          return true;
+        },
+      },
 
-    // Called after sign-in: upsert user fields and update lastLogin
-    async signIn({ user, account, profile }) {
-      if (account?.provider === "google" && profile) {
-        try {
-          await prisma.user.update({
-            where: { id: user.id },
-            data: {
-              googleId: profile.sub,
-              lastLogin: new Date(),
-              // Sync name/image in case they changed in Google
-              name: profile.name ?? user.name,
-              image: profile.picture ?? user.image,
-              emailVerified: new Date(),
-              provider: "google",
-            },
-          });
-        } catch {
-          // First sign-in — user row may not have id yet; adapter handles creation
-          // This will succeed on subsequent sign-ins
-        }
+  events: {
+    async signIn({ user, account, isNewUser }) {
+      if (process.env.NODE_ENV === "development") {
+        console.info("[NikkaLink Auth] signIn", {
+          userId: user.id,
+          provider: account?.provider,
+          isNewUser,
+          mode: jwtMode ? "jwt" : "database",
+        });
       }
-      return true;
+    },
+  },
+
+  logger: {
+    error(error) {
+      logAuthError("NextAuth error", error);
+    },
+    warn(code) {
+      console.warn("[NikkaLink Auth] NextAuth warning:", code);
+    },
+    debug(message, metadata) {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[NikkaLink Auth]", message, metadata ?? "");
+      }
     },
   },
 

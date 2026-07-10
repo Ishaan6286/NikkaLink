@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,15 +20,27 @@ import {
   Check,
   MousePointer,
   Share2,
-  Star,
 } from "lucide-react";
-import { ThemeToggle } from "@/components/shared/ThemeToggle";
 import { LiveShortener } from "@/components/landing/LiveShortener";
-import { useSession } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2 } from "lucide-react";
+import { LandingNavbar } from "@/components/landing/LandingNavbar";
+import { AppChrome } from "@/components/shared/AppChrome";
 import { BrandLogo } from "@/components/shared/BrandLogo";
-import { buildApiDocsUrl } from "@/lib/env";
+
+const LandingCommandPalette = dynamic(
+  () =>
+    import("@/components/landing/LandingCommandPalette").then(
+      (m) => m.LandingCommandPalette
+    ),
+  { ssr: false }
+);
+
+const LandingClipboardPrompt = dynamic(
+  () =>
+    import("@/components/landing/LandingClipboardPrompt").then(
+      (m) => m.LandingClipboardPrompt
+    ),
+  { ssr: false }
+);
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -270,64 +283,22 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
 // ─── Main Landing Page ─────────────────────────────────────────────────────────
 
 export default function LandingPage() {
-  const { data: session, status } = useSession();
+  const [clipboardUrl, setClipboardUrl] = useState<string | undefined>();
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
+      <AppChrome />
+      <LandingCommandPalette />
+      <LandingClipboardPrompt
+        onPaste={(url) => setClipboardUrl(url)}
+      />
 
-      {/* ── Navbar ────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
-          <Link href="/" className="flex items-center">
-            <BrandLogo iconClassName="h-10 w-10" wordmarkClassName="text-xl" />
-          </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
-            <a href="#faq" className="hover:text-foreground transition-colors">FAQ</a>
-          </nav>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {status === "loading" ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground mx-4" />
-            ) : status === "authenticated" ? (
-              <>
-                <Link
-                  href="/dashboard"
-                  className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link href="/dashboard/profile">
-                  <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:opacity-80 transition-opacity">
-                    <AvatarImage src={session?.user?.image ?? undefined} alt={session?.user?.name ?? "User"} />
-                    <AvatarFallback className="bg-primary/20 text-primary text-xs font-semibold">
-                      {(session?.user?.name ?? session?.user?.email ?? "U").slice(0, 2).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="hidden sm:inline-flex items-center rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors">
-                  Log in
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors"
-                >
-                  Get Started <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <LandingNavbar />
 
-      <main className="flex-1">
+      <main className="flex-1 pt-16">
 
         {/* ── Hero Section ─────────────────────────────────────────────────── */}
-        <section className="relative overflow-hidden px-4 pt-20 pb-28 sm:px-6 sm:pt-32 sm:pb-36 text-center">
+        <section className="relative overflow-hidden px-4 pt-14 pb-20 sm:px-6 sm:pt-24 sm:pb-28 text-center">
           {/* Gradient orbs */}
           <div aria-hidden className="pointer-events-none absolute inset-x-0 -top-40 -z-10 overflow-hidden blur-3xl">
             <div className="relative left-[calc(50%-11rem)] aspect-[1155/678] w-[36.125rem] -translate-x-1/2 rotate-[30deg] bg-gradient-to-tr from-cyan-400 to-orange-400 opacity-15 sm:left-[calc(50%-30rem)] sm:w-[72.1875rem]" />
@@ -341,49 +312,32 @@ export default function LandingPage() {
           >
 
 
-            <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl leading-[1.1] mb-6">
+            <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl leading-[1.1] mb-5">
               Shorten Links.<br />
               <span className="bg-gradient-to-r from-cyan-400 via-primary to-orange-500 bg-clip-text text-transparent">
                 Track What Matters.
               </span>
             </h1>
 
-            <p className="text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-4">
+            <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-4">
               Create short links in seconds, share anywhere, and monitor performance with beautiful analytics. No signup required.
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground mb-10">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground mb-8">
               <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> No signup required</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Instant results</span>
               <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-primary" /> Secure & free links</span>
             </div>
 
-            <LiveShortener />
+            <LiveShortener
+              initialUrl={clipboardUrl}
+              onInitialUrlConsumed={() => setClipboardUrl(undefined)}
+            />
           </motion.div>
         </section>
 
-        {/* ── Trust / Stats Bar ─────────────────────────────────────────────── */}
-        <section className="border-y border-border/40 bg-muted/20 px-4 py-8 sm:px-6">
-          <div className="mx-auto max-w-4xl">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-              {[
-                { label: "Links Shortened", value: "--" },
-                { label: "Total Clicks", value: "--" },
-                { label: "Active Users", value: "--" },
-                { label: "Uptime", value: "--%", highlight: true },
-              ].map(({ label, value, highlight }) => (
-                <div key={label}>
-                  <p className={`text-3xl font-extrabold ${highlight ? "text-primary" : "text-foreground"}`}>{value}</p>
-                  <p className="text-sm text-muted-foreground mt-1">{label}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-xs text-muted-foreground mt-6">Built for speed, reliability, and simplicity.</p>
-          </div>
-        </section>
-
         {/* ── Features Section ─────────────────────────────────────────────── */}
-        <section id="features" className="px-4 py-24 sm:px-6">
+        <section id="features" className="px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -415,7 +369,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── How It Works ─────────────────────────────────────────────────── */}
-        <section id="how-it-works" className="px-4 py-24 sm:px-6 bg-muted/20 border-y border-border/40">
+        <section id="how-it-works" className="px-4 py-20 sm:px-6 bg-muted/20 border-y border-border/40">
           <div className="mx-auto max-w-4xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -439,7 +393,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Why NikkaLink + Live Demo Preview ────────────────────────────── */}
-        <section className="px-4 py-24 sm:px-6">
+        <section className="px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
               <motion.div
@@ -479,7 +433,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── CTA Section ──────────────────────────────────────────────────── */}
-        <section className="px-4 py-24 sm:px-6 border-y border-border/40 bg-muted/20">
+        <section className="px-4 py-20 sm:px-6 border-y border-border/40 bg-muted/20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -510,7 +464,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── FAQ Section ──────────────────────────────────────────────────── */}
-        <section id="faq" className="px-4 py-24 sm:px-6">
+        <section id="faq" className="px-4 py-20 sm:px-6">
           <div className="mx-auto max-w-2xl">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -530,51 +484,21 @@ export default function LandingPage() {
       </main>
 
       {/* ── Footer ──────────────────────────────────────────────────────────── */}
-      <footer className="border-t border-border/40 bg-muted/10 px-4 py-14 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-10">
-            <div className="md:col-span-1">
-              <BrandLogo href="/" iconClassName="h-8 w-8" wordmarkClassName="text-lg" />
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                Short Links. Smarter Connections.
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-semibold mb-4">Product</p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
-                <li><Link href="/login" className="hover:text-primary transition-colors">Pricing</Link></li>
-                <li><a href={buildApiDocsUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">API</a></li>
-                <li><Link href="/login" className="hover:text-primary transition-colors">Roadmap</Link></li>
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm font-semibold mb-4">Resources</p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><Link href="/login" className="hover:text-primary transition-colors">Blog</Link></li>
-                <li><a href={buildApiDocsUrl()} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">Documentation</a></li>
-                <li><Link href="/login" className="hover:text-primary transition-colors">Guides</Link></li>
-                <li><Link href="/login" className="hover:text-primary transition-colors">Support</Link></li>
-              </ul>
-            </div>
-            <div>
-              <p className="text-sm font-semibold mb-4">Legal</p>
-              <ul className="space-y-2.5 text-sm text-muted-foreground">
-                <li><Link href="/" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                <li><Link href="/" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                <li><Link href="/" className="hover:text-primary transition-colors">Cookie Policy</Link></li>
-                <li><Link href="/" className="hover:text-primary transition-colors">Acceptable Use</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 border-t border-border/40">
-            <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} NikkaLink. All rights reserved.
-            </p>
-            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
-              Made with <Star className="h-3.5 w-3.5 text-primary fill-primary" /> for the community.
-            </p>
-          </div>
+      <footer className="border-t border-border/40 bg-muted/10 px-4 py-10 sm:px-6">
+        <div className="mx-auto max-w-7xl flex flex-col items-center gap-6 text-center">
+          <BrandLogo href="/" iconClassName="h-8 w-8" wordmarkClassName="text-lg" />
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} NikkaLink. All rights reserved.
+          </p>
+          <a
+            href="https://github.com/Ishaan6286"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-4 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-primary/5 transition-colors"
+          >
+            Know about the developer
+            <ExternalLink className="h-3 w-3" />
+          </a>
         </div>
       </footer>
     </div>

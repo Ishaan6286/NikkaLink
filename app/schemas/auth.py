@@ -40,6 +40,13 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class SSORequest(BaseModel):
+    """Trusted SSO from the Next.js frontend after Google OAuth."""
+
+    email: EmailStr
+    name: str | None = Field(default=None, max_length=100)
+
+
 class UserResponse(BaseModel):
     """Response schema for user profile."""
 

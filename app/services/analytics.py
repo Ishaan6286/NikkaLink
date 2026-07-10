@@ -55,6 +55,25 @@ class AnalyticsService:
             "os": f"{ua.os.family} {ua.os.version_string}".strip(),
         }
 
+    @staticmethod
+    def _parse_traffic_source(referrer: str | None) -> str:
+        if not referrer:
+            return "direct"
+        ref = referrer.lower()
+        if "google" in ref:
+            return "google"
+        if "facebook" in ref or "fb.com" in ref:
+            return "facebook"
+        if "twitter" in ref or "t.co" in ref or "x.com" in ref:
+            return "twitter"
+        if "linkedin" in ref:
+            return "linkedin"
+        if "instagram" in ref:
+            return "instagram"
+        if "youtube" in ref:
+            return "youtube"
+        return "referral"
+
     async def track_click(
         self,
         url_id: uuid.UUID,
@@ -68,6 +87,10 @@ class AnalyticsService:
         """
         ip_hash = self._hash_ip(ip)
         ua_data = self._parse_user_agent(user_agent)
+        traffic_source = self._parse_traffic_source(referrer)
+
+        # Detect repeat visitors
+        is_repeat = await self._repo.has_prior_click(url_id, ip_hash)
 
         click = await self._repo.create_click(
             url_id=url_id,
@@ -77,6 +100,8 @@ class AnalyticsService:
             device=ua_data["device"],
             os=ua_data["os"],
             referrer=referrer,
+            traffic_source=traffic_source,
+            is_repeat=is_repeat,
         )
 
         # Invalidate analytics cache for this URL

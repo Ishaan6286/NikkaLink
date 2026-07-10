@@ -2,6 +2,8 @@
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { getAuthErrorMessage, logAuthError } from "@/lib/auth-errors";
+import { clearBackendTokens } from "@/lib/backend-auth";
 
 export function useMe() {
   const { data: session, status } = useSession();
@@ -22,11 +24,13 @@ export function useGoogleSignIn() {
         redirect: false,
       });
       if (result?.error) {
-        toast.error("Sign-in failed. Please try again.");
+        logAuthError("useGoogleSignIn failed", { error: result.error });
+        toast.error(getAuthErrorMessage(result.error));
       } else if (result?.url) {
         router.push(result.url);
       }
-    } catch {
+    } catch (error) {
+      logAuthError("useGoogleSignIn threw an exception", error);
       toast.error("An unexpected error occurred.");
     }
   };
@@ -38,6 +42,7 @@ export function useLogout() {
   const router = useRouter();
 
   return async () => {
+    clearBackendTokens();
     await signOut({ redirect: false });
     router.push("/login");
     toast.success("Logged out successfully.");

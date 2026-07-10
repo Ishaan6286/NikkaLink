@@ -10,6 +10,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
+  CommandShortcut,
 } from "@/components/ui/command";
 import {
   BarChart2,
@@ -19,6 +20,9 @@ import {
   LogOut,
   Moon,
   Plus,
+  QrCode,
+  Search,
+  Settings,
   Sun,
   User,
 } from "lucide-react";
@@ -41,6 +45,9 @@ export function CommandPalette({ onCreateURL }: CommandPaletteProps) {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((o) => !o);
+      }
+      if (e.key === "Escape") {
+        setOpen(false);
       }
     };
     document.addEventListener("keydown", down);
@@ -75,8 +82,8 @@ export function CommandPalette({ onCreateURL }: CommandPaletteProps) {
           <CommandItem
             onSelect={() => run(() => router.push("/dashboard/profile"))}
           >
-            <User className="mr-2 h-4 w-4" />
-            Profile
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />
@@ -84,6 +91,21 @@ export function CommandPalette({ onCreateURL }: CommandPaletteProps) {
           <CommandItem onSelect={() => run(() => onCreateURL?.())}>
             <Plus className="mr-2 h-4 w-4" />
             Create Short URL
+            <CommandShortcut>⌘K</CommandShortcut>
+          </CommandItem>
+          <CommandItem
+            onSelect={() => run(() => router.push("/dashboard/urls"))}
+          >
+            <QrCode className="mr-2 h-4 w-4" />
+            Generate QR
+          </CommandItem>
+          <CommandItem
+            onSelect={() =>
+              run(() => window.dispatchEvent(new Event("nikkalink:focus-url")))
+            }
+          >
+            <Search className="mr-2 h-4 w-4" />
+            Focus Search
           </CommandItem>
           <CommandItem
             onSelect={() =>
@@ -91,7 +113,7 @@ export function CommandPalette({ onCreateURL }: CommandPaletteProps) {
             }
           >
             <ExternalLink className="mr-2 h-4 w-4" />
-            Open API Docs
+            Documentation
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

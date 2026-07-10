@@ -48,6 +48,16 @@ class ClickRepository(BaseRepository[Click]):
         result = await self.session.execute(stmt)
         return result.scalar() or 0
 
+    async def has_prior_click(self, url_id: uuid.UUID, ip_hash: str) -> bool:
+        """Check if this IP has clicked this URL before."""
+        stmt = (
+            select(func.count())
+            .select_from(Click)
+            .where(Click.url_id == url_id, Click.ip_hash == ip_hash)
+        )
+        result = await self.session.execute(stmt)
+        return (result.scalar() or 0) > 0
+
     async def aggregate_by_field(
         self,
         url_id: uuid.UUID,

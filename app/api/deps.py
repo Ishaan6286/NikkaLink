@@ -1,8 +1,5 @@
 """
 FastAPI dependency injection functions.
-
-Provides database sessions, Redis clients, service instances,
-and authentication dependencies for route handlers.
 """
 
 from __future__ import annotations
@@ -22,19 +19,23 @@ from app.db.session import async_session_factory
 from app.models.user import User
 from app.repositories.user import UserRepository
 from app.services.analytics import AnalyticsService
+from app.services.analytics_aggregation import AnalyticsAggregationService
 from app.services.auth import AuthService
 from app.services.cache import CacheService
+from app.services.collections import CollectionService
+from app.services.health_monitor import HealthService
+from app.services.intelligence import IntelligenceService
+from app.services.metadata import MetadataService
+from app.services.profile import ProfileService
+from app.services.summary import SummaryService
 from app.services.url import URLService
+from app.events.bus import EventBus
+from app.workers.queue import JobQueue
 
-# Re-export Redis helpers for backward compatibility
 __all__ = ["close_redis", "get_redis"]
 
 
-# ── Database Session ─────────────────────────────────────────────────────────
-
-
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
-    """Yield an async database session."""
     async with async_session_factory() as session:
         try:
             yield session
@@ -46,53 +47,97 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
-# ── Service Factories ────────────────────────────────────────────────────────
-
-
 async def get_cache_service(
     redis_client: redis.Redis | None = Depends(get_redis),
 ) -> CacheService:
-    """Construct CacheService."""
     return CacheService(redis_client)
+
+
+async def get_job_queue(
+    redis_client: redis.Redis | None = Depends(get_redis),
+) -> JobQueue:
+    return JobQueue(redis_client)
+
+
+async def get_event_bus(
+    redis_client: redis.Redis | None = Depends(get_redis),
+    queue: JobQueue = Depends(get_job_queue),
+) -> EventBus:
+    return EventBus(redis_client, queue)
 
 
 async def get_auth_service(
     session: AsyncSession = Depends(get_db),
 ) -> AuthService:
-    """Construct AuthService."""
     return AuthService(session)
 
 
 async def get_url_service(
     session: AsyncSession = Depends(get_db),
     cache: CacheService = Depends(get_cache_service),
+    event_bus: EventBus = Depends(get_event_bus),
 ) -> URLService:
-    """Construct URLService."""
-    return URLService(session, cache)
+    return URLService(session, cache, event_bus)
 
 
 async def get_analytics_service(
     session: AsyncSession = Depends(get_db),
     cache: CacheService = Depends(get_cache_service),
 ) -> AnalyticsService:
-    """Construct AnalyticsService."""
     return AnalyticsService(session, cache)
 
 
-# ── Authentication Dependencies ──────────────────────────────────────────────
+async def get_metadata_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheService = Depends(get_cache_service),
+) -> MetadataService:
+    return MetadataService(session, cache)
+
+
+async def get_health_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheService = Depends(get_cache_service),
+) -> HealthService:
+    return HealthService(session, cache)
+
+
+async def get_intelligence_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheService = Depends(get_cache_service),
+) -> IntelligenceService:
+    return IntelligenceService(session, cache)
+
+
+async def get_collection_service(
+    session: AsyncSession = Depends(get_db),
+) -> CollectionService:
+    return CollectionService(session)
+
+
+async def get_summary_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheService = Depends(get_cache_service),
+) -> SummaryService:
+    return SummaryService(session, cache)
+
+
+async def get_profile_service(
+    session: AsyncSession = Depends(get_db),
+) -> ProfileService:
+    return ProfileService(session)
+
+
+async def get_analytics_aggregation_service(
+    session: AsyncSession = Depends(get_db),
+    cache: CacheService = Depends(get_cache_service),
+) -> AnalyticsAggregationService:
+    return AnalyticsAggregationService(session, cache)
 
 
 async def get_current_user(
     authorization: Annotated[str, Header()],
     session: AsyncSession = Depends(get_db),
 ) -> User:
-    """
-    Extract and validate the JWT from the Authorization header,
-    then load and return the User.
-
-    Raises:
-        AuthenticationError: If the token is missing, invalid, or the user doesn't exist.
-    """
     if not authorization.startswith("Bearer "):
         raise AuthenticationError("Invalid authorization header format")
 
@@ -120,7 +165,6 @@ async def get_current_user(
 async def get_current_active_user(
     user: User = Depends(get_current_user),
 ) -> User:
-    """Ensure the user is active."""
     if not user.is_active:
         raise AuthenticationError("Account is deactivated")
     return user
@@ -130,10 +174,6 @@ async def get_optional_user(
     authorization: Annotated[str | None, Header()] = None,
     session: AsyncSession = Depends(get_db),
 ) -> User | None:
-    """
-    Optionally authenticate the user. Returns None if no
-    Authorization header is provided.
-    """
     if authorization is None or not authorization.startswith("Bearer "):
         return None
 

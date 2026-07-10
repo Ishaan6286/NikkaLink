@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { urlService } from "@/services/urlService";
+import { ensureBackendToken } from "@/lib/backend-auth";
 import { CreateURLPayload, URLListParams, UpdateURLPayload } from "@/types";
 
 export const URL_KEYS = {
@@ -18,7 +19,10 @@ export const URL_KEYS = {
 export function useURLs(params: URLListParams = {}) {
   return useQuery({
     queryKey: URL_KEYS.list(params),
-    queryFn: () => urlService.listURLs(params),
+    queryFn: async () => {
+      await ensureBackendToken();
+      return urlService.listURLs(params);
+    },
     placeholderData: keepPreviousData,
   });
 }
@@ -35,15 +39,23 @@ export function useCreateURL() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateURLPayload) => urlService.createURL(data),
+    mutationFn: async (data: CreateURLPayload) => {
+      await ensureBackendToken();
+      return urlService.createURL(data);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: URL_KEYS.all });
-      toast.success("Short URL created!");
     },
     onError: (err: unknown) => {
+      const axiosErr = err as {
+        message?: string;
+        response?: { data?: { detail?: string } };
+      };
       const msg =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data
-          ?.detail ?? "Failed to create URL.";
+        axiosErr.response?.data?.detail ??
+        (axiosErr.message === "Network Error"
+          ? "Cannot reach the API. Start the backend (docker compose up) or check NEXT_PUBLIC_API_URL."
+          : "Failed to create URL.");
       toast.error(msg);
     },
   });

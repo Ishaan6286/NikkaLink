@@ -53,6 +53,9 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # Shared secret for trusted Next.js → FastAPI SSO (Google users via NextAuth)
+    FRONTEND_SSO_SECRET: str = ""
+
     # ── CORS ─────────────────────────────────────────────────────────────
     CORS_ORIGINS: list[str] = [
         "http://localhost:3000",
@@ -66,6 +69,17 @@ class Settings(BaseSettings):
 
     # ── Short Code ───────────────────────────────────────────────────────
     SHORT_CODE_LENGTH: int = 7
+
+    # ── AI Summarization ─────────────────────────────────────────────────
+    OPENAI_API_KEY: str = ""
+    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
+    OPENAI_MODEL: str = "gpt-4o-mini"
+
+    # ── Background Workers ───────────────────────────────────────────────
+    ENABLE_BACKGROUND_WORKERS: bool = True
+    HEALTH_CHECK_INTERVAL_SECONDS: int = 3600
+    ANALYTICS_AGGREGATION_INTERVAL_SECONDS: int = 86400
+    METADATA_QUEUE_POLL_SECONDS: int = 2
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod

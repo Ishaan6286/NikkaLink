@@ -16,7 +16,10 @@ from app.models.url import URL
 from app.repositories.url import URLRepository
 from app.schemas.url import URLCreate, URLResponse, URLUpdate
 from app.services.cache import CacheService
+from app.events.bus import EventBus
+from app.events.types import EventType
 from app.utils.shortcode import generate_short_code
+from app.utils.url_normalize import normalize_url
 
 logger = structlog.get_logger()
 
@@ -26,9 +29,15 @@ class URLService:
 
     CACHE_NS = "url"
 
-    def __init__(self, session: AsyncSession, cache: CacheService) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+        cache: CacheService,
+        event_bus: EventBus | None = None,
+    ) -> None:
         self._repo = URLRepository(session)
         self._cache = cache
+        self._event_bus = event_bus
         self._settings = get_settings()
 
     def _build_short_url(self, short_code: str) -> str:
@@ -49,6 +58,11 @@ class URLService:
             is_active=url.is_active,
             tags=url.tags,
             total_clicks=url.total_clicks,
+            note_title=url.note_title,
+            private_notes=url.private_notes,
+            is_favorite=url.is_favorite,
+            is_pinned=url.is_pinned,
+            color_label=url.color_label,
             created_at=url.created_at,
             updated_at=url.updated_at,
         )
@@ -87,9 +101,10 @@ class URLService:
             owner_id=owner_id,
             expires_at=data.expires_at,
             tags=data.tags or [],
+            normalized_url=normalize_url(data.original_url),
         )
 
-        # Cache for redirect lookups
+        # Cache for redirect lookups (synchronous, <10ms)
         await self._cache.set(self.CACHE_NS, short_code, {
             "original_url": url.original_url,
             "is_active": url.is_active,
@@ -100,6 +115,20 @@ class URLService:
         response = self._to_response(url)
         if public_app_url:
             response.short_url = f"{public_app_url.rstrip('/')}/{short_code}"
+
+        # Publish LinkCreated — all expensive work happens AFTER response via event bus
+        if self._event_bus:
+            await self._event_bus.publish_simple(
+                EventType.LINK_CREATED,
+                {
+                    "url_id": str(url.id),
+                    "short_code": short_code,
+                    "original_url": url.original_url,
+                    "owner_id": str(owner_id) if owner_id else None,
+                    "note_title": url.note_title,
+                },
+            )
+
         await logger.ainfo(
             "url_created",
             short_code=short_code,
@@ -209,6 +238,16 @@ class URLService:
         # Invalidate cache
         await self._cache.delete(self.CACHE_NS, short_code)
 
+        if self._event_bus:
+            await self._event_bus.publish_simple(
+                EventType.LINK_UPDATED,
+                {
+                    "url_id": str(url.id),
+                    "short_code": short_code,
+                    "owner_id": str(owner_id),
+                },
+            )
+
         return self._to_response(url)
 
     async def soft_delete_url(
@@ -229,6 +268,16 @@ class URLService:
 
         # Invalidate cache
         await self._cache.delete(self.CACHE_NS, short_code)
+
+        if self._event_bus:
+            await self._event_bus.publish_simple(
+                EventType.LINK_DELETED,
+                {
+                    "url_id": str(url.id),
+                    "short_code": short_code,
+                    "owner_id": str(owner_id),
+                },
+            )
 
         await logger.ainfo("url_deleted", short_code=short_code, owner_id=str(owner_id))
 

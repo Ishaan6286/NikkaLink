@@ -13,11 +13,17 @@ export function ThemeToggle() {
 
   if (!mounted) return <div className="h-9 w-9" />;
 
+  const toggle = () => {
+    document.documentElement.classList.add("transitioning");
+    setTheme(theme === "dark" ? "light" : "dark");
+    setTimeout(() => document.documentElement.classList.remove("transitioning"), 300);
+  };
+
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={toggle}
       className="rounded-full"
     >
       {theme === "dark" ? (
