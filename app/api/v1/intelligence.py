@@ -275,9 +275,15 @@ async def create_collection(
         color=data.color,
     )
     return CollectionResponse(
-        id=c.id, name=c.name, description=c.description,
-        parent_id=c.parent_id, color=c.color, sort_order=c.sort_order,
-        is_pinned=c.is_pinned, created_at=c.created_at,
+        id=c.id,
+        name=c.name,
+        description=c.description,
+        parent_id=c.parent_id,
+        color=c.color,
+        sort_order=c.sort_order,
+        is_pinned=c.is_pinned,
+        item_count=0,
+        created_at=c.created_at,
     )
 
 

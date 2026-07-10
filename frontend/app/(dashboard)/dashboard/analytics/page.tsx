@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   ResponsiveContainer,
@@ -48,8 +48,14 @@ function AnalyticsContent() {
   const [selectedCode, setSelectedCode] = useState(initialCode);
   const [days, setDays] = useState(30);
 
-  const { data: urlsList } = useURLs({ page: 1, page_size: 100 });
+  const { data: urlsList, isError: urlsError } = useURLs({ page: 1, page_size: 100 });
   const urls = urlsList?.items ?? [];
+
+  useEffect(() => {
+    if (!selectedCode && urls.length > 0) {
+      setSelectedCode(urls[0].short_code);
+    }
+  }, [urls, selectedCode]);
 
   const { data: summary, isLoading: sumLoading } =
     useAnalyticsSummary(selectedCode);
@@ -77,7 +83,10 @@ function AnalyticsContent() {
 
       {/* URL selector */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <Select value={selectedCode} onValueChange={(v) => setSelectedCode(v ?? "")}>
+        <Select
+          value={selectedCode || undefined}
+          onValueChange={(v) => setSelectedCode(v ?? "")}
+        >
           <SelectTrigger className="w-full sm:w-72">
             <SelectValue placeholder="Select a link to analyse…" />
           </SelectTrigger>
@@ -108,7 +117,14 @@ function AnalyticsContent() {
         </Select>
       </div>
 
-      {!selectedCode && (
+      {urlsError && urls.length === 0 && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          Could not load your links. Ensure you are signed in and FRONTEND_SSO_SECRET is
+          configured on Vercel and Render.
+        </div>
+      )}
+
+      {!selectedCode && !urlsError && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted mb-4">
             <BarChart2 className="h-6 w-6 text-muted-foreground" />
@@ -304,7 +320,13 @@ function AnalyticsContent() {
 
 export default function AnalyticsPage() {
   return (
-    <Suspense>
+    <Suspense
+      fallback={
+        <div className="flex min-h-[40vh] items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      }
+    >
       <AnalyticsContent />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { intelligenceService } from "@/services/intelligenceService";
+import { requireBackendToken, BackendAuthError } from "@/lib/backend-auth";
 import { toast } from "sonner";
 
 export const INTEL_KEYS = {
@@ -78,7 +79,14 @@ export function useGenerateSummary() {
 export function useCollections(parentId?: string) {
   return useQuery({
     queryKey: INTEL_KEYS.collections(parentId),
-    queryFn: () => intelligenceService.listCollections(parentId),
+    queryFn: async () => {
+      await requireBackendToken();
+      return intelligenceService.listCollections(parentId);
+    },
+    retry: (failureCount, error) => {
+      if (error instanceof BackendAuthError) return false;
+      return failureCount < 1;
+    },
   });
 }
 

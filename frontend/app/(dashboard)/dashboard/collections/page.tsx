@@ -5,14 +5,15 @@ import { motion } from "framer-motion";
 import { FolderPlus, Folder, ChevronRight, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCollections } from "@/hooks/useIntelligence";
+import { useCollections, INTEL_KEYS } from "@/hooks/useIntelligence";
 import { intelligenceService } from "@/services/intelligenceService";
+import { requireBackendToken, BackendAuthError } from "@/lib/backend-auth";
+import type { Collection } from "@/types";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { INTEL_KEYS } from "@/hooks/useIntelligence";
 
 export default function CollectionsPage() {
-  const { data: collections, isLoading } = useCollections();
+  const { data: collections, isLoading, isError, refetch } = useCollections();
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
   const qc = useQueryClient();
@@ -21,12 +22,23 @@ export default function CollectionsPage() {
     if (!newName.trim()) return;
     setCreating(true);
     try {
-      await intelligenceService.createCollection({ name: newName.trim() });
+      await requireBackendToken();
+      const created = await intelligenceService.createCollection({ name: newName.trim() });
+      const withCount: Collection = { ...created, item_count: created.item_count ?? 0 };
       setNewName("");
-      qc.invalidateQueries({ queryKey: INTEL_KEYS.collections() });
+      qc.setQueryData<Collection[]>(INTEL_KEYS.collections(), (prev) => [
+        ...(prev ?? []),
+        withCount,
+      ]);
+      await qc.invalidateQueries({ queryKey: ["collections"] });
+      await refetch();
       toast.success("Collection created");
-    } catch {
-      toast.error("Failed to create collection");
+    } catch (error) {
+      if (error instanceof BackendAuthError) {
+        toast.error(error.message, { duration: 8000 });
+      } else {
+        toast.error("Failed to create collection");
+      }
     } finally {
       setCreating(false);
     }
@@ -63,6 +75,13 @@ export default function CollectionsPage() {
       {isLoading ? (
         <div className="flex justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : isError ? (
+        <div className="text-center py-16 rounded-xl border border-dashed border-amber-500/40 bg-amber-500/5">
+          <p className="text-muted-foreground">Could not load collections. Check your API connection and try again.</p>
+          <Button variant="outline" className="mt-4" onClick={() => void refetch()}>
+            Retry
+          </Button>
         </div>
       ) : collections?.length === 0 ? (
         <div className="text-center py-16 rounded-xl border border-dashed border-border">

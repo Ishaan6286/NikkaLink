@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Download, QrCode, Search, ExternalLink, Link2 } from "lucide-react";
+import { Download, QrCode, Search, ExternalLink, Link2, Share2 } from "lucide-react";
 import { useURLs } from "@/hooks/useURLs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { buildPublicShortUrl, getPublicAppUrl } from "@/lib/env";
+import { buildPublicShortUrl } from "@/lib/env";
 import { urlService } from "@/services/urlService";
 
 function QRCard({ url }: { url: { short_code: string; original_url: string; is_active: boolean; total_clicks: number } }) {
@@ -29,6 +29,23 @@ function QRCard({ url }: { url: { short_code: string; original_url: string; is_a
       toast.success("QR code downloaded!");
     } catch {
       toast.error("Failed to download QR code.");
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "NikkaLink", url: shortUrl });
+        return;
+      } catch {
+        /* fall through */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shortUrl);
+      toast.success("Link copied to clipboard!");
+    } catch {
+      window.open(shortUrl, "_blank", "noopener,noreferrer");
     }
   };
 
@@ -79,8 +96,17 @@ function QRCard({ url }: { url: { short_code: string; original_url: string; is_a
           size="sm"
           variant="outline"
           className="h-8 w-8 p-0"
-          render={<a href={shortUrl} target="_blank" rel="noreferrer" title="Open link" />}
-          nativeButton={false}
+          title="Share link"
+          onClick={() => void handleShare()}
+        >
+          <Share2 className="h-3 w-3" />
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 w-8 p-0"
+          title="Open link"
+          onClick={() => window.open(shortUrl, "_blank", "noopener,noreferrer")}
         >
           <ExternalLink className="h-3 w-3" />
         </Button>
