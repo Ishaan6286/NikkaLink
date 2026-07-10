@@ -30,6 +30,7 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { URL_KEYS } from "@/hooks/useURLs";
 import { INTEL_KEYS } from "@/hooks/useIntelligence";
+import { normalizeUrlInput } from "@/lib/url-utils";
 
 const schema = z.object({
   original_url: z.string().url("Please enter a valid URL"),
@@ -128,7 +129,7 @@ export function CreateURLModal({ open, onOpenChange, initialUrl }: CreateURLModa
 
   const doCreate = async (data: FormData) => {
     const result = await createURL.mutateAsync({
-      original_url: data.original_url,
+      original_url: normalizeUrlInput(data.original_url),
       custom_alias: data.custom_alias || undefined,
       expires_at: data.expires_at || undefined,
     });
@@ -139,13 +140,22 @@ export function CreateURLModal({ open, onOpenChange, initialUrl }: CreateURLModa
   };
 
   const onSubmit = async (data: FormData) => {
-    const dupResult = await duplicateCheck.mutateAsync(data.original_url);
+    const normalizedUrl = normalizeUrlInput(data.original_url);
+    const payload = { ...data, original_url: normalizedUrl };
+
+    let dupResult: DuplicateCheckResult = { is_duplicate: false };
+    try {
+      dupResult = await duplicateCheck.mutateAsync(normalizedUrl);
+    } catch {
+      // Duplicate check is optional — proceed with create
+    }
+
     if (dupResult.is_duplicate) {
       setDuplicate(dupResult);
       setShowDuplicate(true);
       return;
     }
-    await doCreate(data);
+    await doCreate(payload);
   };
 
   const handleClose = () => {

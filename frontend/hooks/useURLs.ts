@@ -40,7 +40,11 @@ export function useCreateURL() {
 
   return useMutation({
     mutationFn: async (data: CreateURLPayload) => {
-      await ensureBackendToken();
+      const hasToken = await ensureBackendToken();
+      if (!hasToken) {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+      }
       return urlService.createURL(data);
     },
     onSuccess: () => {

@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { isIntelligenceUnavailable } from "@/lib/api-errors";
+import { isIntelligenceUnavailable, isSkippableIntelligenceError } from "@/lib/api-errors";
 import type {
   Collection,
   DuplicateCheckResult,
@@ -47,7 +47,7 @@ export const intelligenceService = {
       });
       return res.data;
     } catch (error) {
-      if (isIntelligenceUnavailable(error)) {
+      if (isSkippableIntelligenceError(error)) {
         return { is_duplicate: false };
       }
       throw error;

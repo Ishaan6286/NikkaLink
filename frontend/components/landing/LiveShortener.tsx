@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 import { buildPublicShortUrl, getApiUrl } from "@/lib/env";
+import { fetchQrBlobUrl, revokeQrBlobUrl } from "@/lib/qr-utils";
 import { toast } from "sonner";
 import Image from "next/image";
 import { SmartUrlInput, type SmartUrlInputHandle } from "@/components/shared/SmartUrlInput";
@@ -47,6 +48,8 @@ function ShortenTab({
   const [progress, setProgress] = useState(0);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+  const [qrImageUrl, setQrImageUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
   const inputRef = useRef<SmartUrlInputHandle>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const shortUrlRef = useRef<HTMLSpanElement>(null);
@@ -205,12 +208,40 @@ function ShortenTab({
     );
   }, [result, shortUrl]);
 
+  useEffect(() => {
+    return () => revokeQrBlobUrl(qrImageUrl);
+  }, [qrImageUrl]);
+
   const handleReset = () => {
+    revokeQrBlobUrl(qrImageUrl);
+    setQrImageUrl(null);
+    setQrLoading(false);
     setResult(null);
     setUrl("");
     setError("");
     inputRef.current?.focus();
   };
+
+  const handleShowQr = useCallback(async () => {
+    if (!result) return;
+    if (qrImageUrl) {
+      setQrImageUrl((prev) => {
+        revokeQrBlobUrl(prev);
+        return null;
+      });
+      return;
+    }
+
+    setQrLoading(true);
+    try {
+      const blobUrl = await fetchQrBlobUrl(shortUrl);
+      setQrImageUrl(blobUrl);
+    } catch {
+      toast.error("Failed to generate QR code");
+    } finally {
+      setQrLoading(false);
+    }
+  }, [result, qrImageUrl, shortUrl]);
 
   const canSubmit = isValidUrl(url) && !isLoading;
 
@@ -350,15 +381,15 @@ function ShortenTab({
                 variant="outline"
                 size="sm"
                 className="gap-2 h-11 hover:border-primary/40"
-                onClick={() =>
-                  window.open(
-                    `${getApiUrl()}/api/v1/urls/qr/generate?url=${encodeURIComponent(shortUrl)}`,
-                    "_blank",
-                    "noopener,noreferrer"
-                  )
-                }
+                onClick={() => void handleShowQr()}
+                disabled={qrLoading}
               >
-                <QrCode className="h-4 w-4" /> QR Code
+                {qrLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <QrCode className="h-4 w-4" />
+                )}
+                {qrImageUrl ? "Hide QR" : "QR Code"}
               </Button>
               <Button
                 type="button"
@@ -384,6 +415,40 @@ function ShortenTab({
                 {copied ? "Copied" : "Copy"}
               </Button>
             </div>
+
+            {qrImageUrl && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center gap-3 rounded-xl border border-border/60 bg-muted/20 p-4"
+              >
+                <div className="rounded-2xl border-2 border-primary/20 bg-white p-3 shadow-lg">
+                  <Image
+                    src={qrImageUrl}
+                    alt="QR Code for short link"
+                    width={180}
+                    height={180}
+                    className="rounded-lg"
+                    unoptimized
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => {
+                    const a = document.createElement("a");
+                    a.href = qrImageUrl;
+                    a.download = `${result.short_code}-qr.png`;
+                    a.click();
+                    toast.success("QR Code downloaded!");
+                  }}
+                >
+                  <Download className="h-4 w-4" /> Download PNG
+                </Button>
+              </motion.div>
+            )}
 
             <Button
               type="button"
