@@ -40,6 +40,9 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: "NikkaLink",
   },
+  verification: {
+    google: "google6aa2542ff12fd36b",
+  },
 };
 
 export const viewport = {
