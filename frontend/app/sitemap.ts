@@ -1,86 +1,58 @@
 import { MetadataRoute } from "next";
-import fs from "fs";
-import path from "path";
 
-// Directories to ignore during automatic sitemap routing
-const EXCLUDE_DIRS = new Set([
-  "api",
-  "dashboard",
-  "offline",
-  "~offline",
-]);
+const BASE_URL = "https://nikkalink.vercel.app";
 
-function getPublicRoutes(dir: string, baseDir: string = ""): string[] {
-  let routes: string[] = [];
-  if (!fs.existsSync(dir)) return routes;
+// Last significant content update — bump this when pages change meaningfully.
+const SITE_UPDATED = "2026-07-17";
 
-  const files = fs.readdirSync(dir, { withFileTypes: true });
-
-  for (const file of files) {
-    if (file.isDirectory()) {
-      const folderName = file.name;
-
-      // Skip dynamic routes (starting with [), special segments (starting with ~),
-      // explicit excluded folders, or anything related to dashboard / private pages.
-      if (
-        folderName.startsWith("[") ||
-        folderName.startsWith("~") ||
-        EXCLUDE_DIRS.has(folderName) ||
-        folderName.includes("dashboard")
-      ) {
-        continue;
-      }
-
-      // Check if folder is a route group (e.g. (auth) or (dashboard))
-      const isRouteGroup = folderName.startsWith("(") && folderName.endsWith(")");
-      const nextBaseDir = isRouteGroup
-        ? baseDir
-        : (baseDir ? `${baseDir}/${folderName}` : `/${folderName}`);
-
-      routes = routes.concat(getPublicRoutes(path.join(dir, folderName), nextBaseDir));
-    } else if (file.name === "page.tsx") {
-      routes.push(baseDir || "/");
-    }
-  }
-
-  return routes;
-}
-
+/**
+ * Static sitemap — deliberately NOT using fs / process.cwd().
+ *
+ * Why static?
+ * Vercel serverless functions run from a compiled bundle in /var/task.
+ * The raw .tsx source files are NOT present at runtime, so any filesystem
+ * scan via fs.readdirSync fails silently and produces an empty or broken
+ * sitemap. A hardcoded list is prerendered by Next.js as a real static
+ * asset (○ route) with Content-Type: application/xml — exactly what
+ * Google Search Console requires.
+ *
+ * Rules:
+ * - Public pages only (no /login, /dashboard, /admin, /api/*, /analytics/*)
+ * - Homepage first, priority 1.0
+ * - Absolute HTTPS URLs, no trailing slashes
+ * - Fixed ISO-8601 lastmod dates (no new Date() — avoids cache-busting)
+ */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const appDirectory = path.join(process.cwd(), "app");
-  let routes: string[] = [];
-
-  try {
-    routes = getPublicRoutes(appDirectory);
-  } catch (error) {
-    console.error("Error generating sitemap dynamically:", error);
-  }
-
-  // Deduplicate and fallback to ensure at least core pages exist
-  const uniqueRoutes = Array.from(new Set(routes));
-  if (uniqueRoutes.length === 0) {
-    uniqueRoutes.push("/", "/about", "/features", "/privacy", "/terms", "/login");
-  }
-
-  const baseUrl = "https://nikkalink.vercel.app";
-
-  return uniqueRoutes.map((route) => {
-    let priority = 0.8;
-    let changeFrequency: "always" | "hourly" | "daily" | "weekly" | "monthly" | "yearly" | "never" = "weekly";
-
-    if (route === "/") {
-      priority = 1.0;
-      changeFrequency = "daily";
-    } else if (route === "/privacy" || route === "/terms") {
-      priority = 0.5;
-      changeFrequency = "monthly";
-    }
-
-    return {
-      url: `${baseUrl}${route}`,
-      lastModified: new Date(),
-      changeFrequency,
-      priority,
-    };
-  });
+  return [
+    {
+      url: BASE_URL,
+      lastModified: SITE_UPDATED,
+      changeFrequency: "daily",
+      priority: 1.0,
+    },
+    {
+      url: `${BASE_URL}/features`,
+      lastModified: SITE_UPDATED,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/about`,
+      lastModified: SITE_UPDATED,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    {
+      url: `${BASE_URL}/privacy`,
+      lastModified: SITE_UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${BASE_URL}/terms`,
+      lastModified: SITE_UPDATED,
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+  ];
 }
