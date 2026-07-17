@@ -487,6 +487,12 @@ export default function LandingPage() {
       <footer className="border-t border-border/40 bg-muted/10 px-4 py-10 sm:px-6">
         <div className="mx-auto max-w-7xl flex flex-col items-center gap-6 text-center">
           <BrandLogo href="/" iconClassName="h-8 w-8" wordmarkClassName="text-lg" />
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground">
+            <Link href="/about" className="hover:text-foreground transition-colors">About</Link>
+            <Link href="/features" className="hover:text-foreground transition-colors">Features</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+          </div>
           <p className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} NikkaLink. All rights reserved.
           </p>
