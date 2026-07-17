@@ -3,6 +3,14 @@ import { logAuthError } from "@/lib/auth-errors";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import DashboardShell from "./DashboardShell";
+import { constructMetadata } from "@/lib/seo";
+
+export const metadata = constructMetadata({
+  title: "Dashboard | NikkaLink",
+  description: "Manage your shortened links, analytics, and account settings.",
+  canonical: "/dashboard",
+  robots: "noindex,nofollow",
+});
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;

@@ -1,10 +1,13 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { AppChrome } from "@/components/shared/AppChrome";
+import { constructMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = constructMetadata({
   title: "Terms of Service | NikkaLink",
-  description: "Terms of Service for NikkaLink URL Management Platform.",
-};
+  description: "Review the NikkaLink Terms of Service. Learn about acceptable use, account responsibility, and the rules governing our URL shortening platform.",
+  canonical: "/terms",
+  keywords: ["terms of service", "nikkalink terms", "acceptable use policy"],
+});
 
 export default function TermsPage() {
   return (

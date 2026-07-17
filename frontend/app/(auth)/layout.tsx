@@ -1,3 +1,12 @@
+import { constructMetadata } from "@/lib/seo";
+
+export const metadata = constructMetadata({
+  title: "Log In | NikkaLink",
+  description: "Sign in to your NikkaLink account.",
+  canonical: "/login",
+  robots: "noindex,nofollow",
+});
+
 export default function AuthLayout({
   children,
 }: {

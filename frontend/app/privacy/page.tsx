@@ -1,10 +1,13 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { AppChrome } from "@/components/shared/AppChrome";
+import { constructMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = constructMetadata({
   title: "Privacy Policy | NikkaLink",
-  description: "Privacy Policy for NikkaLink URL Management Platform.",
-};
+  description: "Read the NikkaLink privacy policy to understand how we collect, use, and protect your data when using our URL shortener.",
+  canonical: "/privacy",
+  keywords: ["privacy policy", "nikkalink privacy", "data protection"],
+});
 
 export default function PrivacyPage() {
   return (

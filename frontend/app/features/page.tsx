@@ -1,11 +1,14 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { AppChrome } from "@/components/shared/AppChrome";
 import { Zap, BarChart2, Code2, QrCode, Shield, Globe } from "lucide-react";
+import { constructMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = constructMetadata({
   title: "Features | NikkaLink",
-  description: "Explore the premium features of the NikkaLink URL management platform.",
-};
+  description: "Explore NikkaLink's full feature set: instant short links, real-time analytics, QR codes, custom aliases, and a powerful developer API.",
+  canonical: "/features",
+  keywords: ["url shortener features", "link analytics", "qr code generator", "custom links", "developer api"],
+});
 
 const featureList = [
   {

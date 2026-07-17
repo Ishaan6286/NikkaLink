@@ -1,11 +1,14 @@
 import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { AppChrome } from "@/components/shared/AppChrome";
 import { Target, Info, Shield, Users } from "lucide-react";
+import { constructMetadata } from "@/lib/seo";
 
-export const metadata = {
-  title: "About Us | NikkaLink",
-  description: "Learn more about NikkaLink, the smart URL management platform.",
-};
+export const metadata = constructMetadata({
+  title: "About | NikkaLink",
+  description: "Learn about NikkaLink's mission, features, and developer-first approach to smart, secure URL management.",
+  canonical: "/about",
+  keywords: ["about nikkalink", "url shortener team", "link management platform"],
+});
 
 export default function AboutPage() {
   return (
