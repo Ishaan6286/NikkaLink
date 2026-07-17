@@ -3,7 +3,7 @@ import { MetadataRoute } from "next";
 const BASE_URL = "https://nikkalink.vercel.app";
 
 // Last significant content update — bump this when pages change meaningfully.
-const SITE_UPDATED = "2026-07-17";
+const SITE_UPDATED = new Date("2026-07-17");
 
 /**
  * Static sitemap — deliberately NOT using fs / process.cwd().
@@ -20,39 +20,30 @@ const SITE_UPDATED = "2026-07-17";
  * - Public pages only (no /login, /dashboard, /admin, /api/*, /analytics/*)
  * - Homepage first, priority 1.0
  * - Absolute HTTPS URLs, no trailing slashes
- * - Fixed ISO-8601 lastmod dates (no new Date() — avoids cache-busting)
+ * - Fixed ISO-8601 lastmod dates (using Date object)
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
     {
       url: BASE_URL,
       lastModified: SITE_UPDATED,
-      changeFrequency: "daily",
-      priority: 1.0,
     },
     {
       url: `${BASE_URL}/features`,
       lastModified: SITE_UPDATED,
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
     {
       url: `${BASE_URL}/about`,
       lastModified: SITE_UPDATED,
-      changeFrequency: "weekly",
-      priority: 0.8,
     },
     {
       url: `${BASE_URL}/privacy`,
       lastModified: SITE_UPDATED,
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
     {
       url: `${BASE_URL}/terms`,
       lastModified: SITE_UPDATED,
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
   ];
 }
+
