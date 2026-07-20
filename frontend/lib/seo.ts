@@ -27,7 +27,7 @@ const BASE_URL = "https://nikkalink.vercel.app";
  */
 export function constructMetadata({
   title = "NikkaLink | Fast & Secure URL Shortener",
-  description = "Create short links, custom URLs, QR codes and analytics with NikkaLink. Fast, secure and completely free.",
+  description = "Create short links, custom URLs, QR codes and analytics with NikkaLink. Fast, secure and completely free. No signup required.",
   canonical = "/",
   image = "/og-image.png",
   robots = "index,follow",
@@ -40,6 +40,7 @@ export function constructMetadata({
     title,
     description,
     keywords,
+    applicationName: "NikkaLink",
     metadataBase: new URL(BASE_URL),
     alternates: {
       canonical,
@@ -47,7 +48,7 @@ export function constructMetadata({
     openGraph: {
       title,
       description,
-      url: `${BASE_URL}${canonical === "/" ? "" : canonical}`,
+      url: `${BASE_URL}${canonical === "/" ? "/" : canonical}`,
       siteName: "NikkaLink",
       images: [
         {

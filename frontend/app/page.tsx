@@ -285,8 +285,39 @@ function FAQItem({ q, a, index }: { q: string; a: string; index: number }) {
 export default function LandingPage() {
   const [clipboardUrl, setClipboardUrl] = useState<string | undefined>();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://nikkalink.vercel.app/#website",
+        "url": "https://nikkalink.vercel.app/",
+        "name": "NikkaLink",
+        "alternateName": ["NikkaLink URL Shortener"]
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://nikkalink.vercel.app/#app",
+        "name": "NikkaLink",
+        "url": "https://nikkalink.vercel.app/",
+        "description": "Create short links, custom URLs, QR codes and analytics with NikkaLink. Fast, secure and completely free.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    ]
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <AppChrome />
       <LandingCommandPalette />
       <LandingClipboardPrompt
@@ -320,7 +351,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto mb-4">
-              Create short links in seconds, share anywhere, and monitor performance with beautiful analytics. No signup required.
+              NikkaLink is a modern URL shortening platform for creating short links, custom URLs, QR codes, and tracking link analytics. No signup required.
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground mb-8">

@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /api/
+Disallow: /login/
+Disallow: /analytics/
+Disallow: /u/
 
 Sitemap: https://nikkalink.vercel.app/sitemap.xml

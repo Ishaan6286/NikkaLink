@@ -24,47 +24,7 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "WebSite",
-      "@id": "https://nikkalink.vercel.app/#website",
-      url: "https://nikkalink.vercel.app",
-      name: "NikkaLink",
-      description:
-        "Create short links, custom URLs, QR codes and analytics with NikkaLink. Fast, secure and completely free.",
-      publisher: {
-        "@type": "Organization",
-        name: "NikkaLink",
-        url: "https://nikkalink.vercel.app",
-      },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: {
-          "@type": "EntryPoint",
-          urlTemplate: "https://nikkalink.vercel.app/?q={search_term_string}",
-        },
-        "query-input": "required name=search_term_string",
-      },
-    },
-    {
-      "@type": "SoftwareApplication",
-      "@id": "https://nikkalink.vercel.app/#app",
-      name: "NikkaLink",
-      url: "https://nikkalink.vercel.app",
-      description:
-        "A premium URL shortener with real-time analytics, custom aliases, QR code generation, and a developer REST API.",
-      applicationCategory: "UtilitiesApplication",
-      operatingSystem: "Web",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-      },
-    },
-  ],
-};
+
 
 export const viewport = {
   themeColor: [
@@ -85,12 +45,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-        />
-      </head>
       <body className={`${inter.variable} font-sans antialiased`} suppressHydrationWarning>
         <Providers>
           {children}
