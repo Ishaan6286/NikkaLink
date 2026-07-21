@@ -248,9 +248,4 @@ For deeper technical context, refer to the project's internal knowledge base:
 - [`NIKKALINK_INTERVIEW_QA.md`](./NIKKALINK_INTERVIEW_QA.md): Engineering decisions, system design tradeoffs, and scalability considerations.
 - [`NIKKALINK_3_HOUR_STUDY_DATA.md`](./NIKKALINK_3_HOUR_STUDY_DATA.md): Condensed technical study sheet.
 
-## License
 
-MIT License.
-
----
-*Created by NikkaLink URL Shortener Team.*
